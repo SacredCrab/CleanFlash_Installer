@@ -10,7 +10,9 @@ pub fn apply_registry(entries: &[&str]) -> Result<(), InstallError> {
     let content = format!("Windows Registry Editor Version 5.00\n\n{}", filled);
 
     let temp_dir = std::env::temp_dir();
-    let reg_file = temp_dir.join("cleanflash_reg.tmp");
+    // Include the process ID to avoid collisions when two instances run concurrently,
+    // matching the unique-file guarantee of C#'s Path.GetTempFileName().
+    let reg_file = temp_dir.join(format!("cleanflash_reg_{}.tmp", std::process::id()));
 
     // Write as UTF-16LE with BOM (Windows .reg format).
     {

@@ -6,6 +6,7 @@ use crate::renderer::Renderer;
 pub struct GradientButton {
     pub rect: Rect,
     pub text: String,
+    pub font_size: f32,
     pub color1: u32,
     pub color2: u32,
     pub back_color: u32,
@@ -23,6 +24,7 @@ impl GradientButton {
         Self {
             rect: Rect::new(x, y, w, h),
             text: text.to_string(),
+            font_size: 13.0,
             color1: Renderer::rgb(118, 118, 118),
             color2: Renderer::rgb(81, 81, 81),
             back_color: Renderer::rgb(0, 0, 0),
@@ -77,7 +79,7 @@ impl GradientButton {
         renderer.draw_rect(r.x, r.y, r.w, r.h, bg);
 
         // Measure text to centre it.
-        let font_size = 13.0;
+        let font_size = self.font_size;
         let (tw, th) = fonts.measure_text(&self.text, font_size);
         let tx = r.x + ((r.w as f32 - tw) / 2.0) as i32;
         let ty = r.y + ((r.h as f32 - th) / 2.0) as i32;

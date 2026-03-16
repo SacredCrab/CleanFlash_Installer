@@ -146,6 +146,28 @@ fn delete_flash_center() {
             }
         }
     }
+
+    // Remove Quick Launch shortcuts from Internet Explorer.
+    if let Ok(appdata) = env::var("APPDATA") {
+        file_util::recursive_delete(
+            &PathBuf::from(&appdata)
+                .join("Microsoft")
+                .join("Internet Explorer")
+                .join("Quick Launch"),
+            Some("Flash Center.lnk"),
+        );
+    }
+
+    // Remove Flash Player shortcut from the user's Start Menu root.
+    if let Ok(appdata) = env::var("APPDATA") {
+        file_util::delete_file(
+            &PathBuf::from(appdata)
+                .join("Microsoft")
+                .join("Windows")
+                .join("Start Menu")
+                .join("Flash Player.lnk"),
+        );
+    }
 }
 
 fn delete_flash_player() {
@@ -189,7 +211,10 @@ fn stop_processes() {
     };
 
     // Enumerate all processes via the snapshot API.
-    let pids = enumerate_processes();
+    let mut pids = enumerate_processes();
+
+    // Sort by creation time (oldest first), matching C#'s .OrderBy(o => o.StartTime).
+    pids.sort_by_key(|(pid, _)| get_process_creation_time(*pid));
 
     for (pid, name) in &pids {
         let lower = name.to_lowercase();
@@ -208,6 +233,24 @@ fn stop_processes() {
                 CloseHandle(handle);
             }
         }
+    }
+}
+
+fn get_process_creation_time(pid: u32) -> u64 {
+    use windows_sys::Win32::Foundation::{CloseHandle, FILETIME};
+    use windows_sys::Win32::System::Threading::{GetProcessTimes, OpenProcess, PROCESS_QUERY_INFORMATION};
+    unsafe {
+        let handle = OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
+        if handle.is_null() {
+            return 0;
+        }
+        let mut create = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut exit_time = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut kernel_time = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut user_time = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        GetProcessTimes(handle, &mut create, &mut exit_time, &mut kernel_time, &mut user_time);
+        CloseHandle(handle);
+        ((create.dwHighDateTime as u64) << 32) | create.dwLowDateTime as u64
     }
 }
 

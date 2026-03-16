@@ -11,8 +11,12 @@ pub struct ImageCheckBox {
 
 impl ImageCheckBox {
     pub fn new(x: i32, y: i32) -> Self {
+        Self::with_size(x, y, 21)
+    }
+
+    pub fn with_size(x: i32, y: i32, size: i32) -> Self {
         Self {
-            rect: Rect::new(x, y, 21, 21),
+            rect: Rect::new(x, y, size, size),
             checked: true,
             enabled: true,
             visible: true,
@@ -43,7 +47,7 @@ impl ImageCheckBox {
             unchecked_img
         };
         if img.width > 0 && img.height > 0 {
-            renderer.draw_image(self.rect.x, self.rect.y, img);
+            renderer.draw_image_scaled(self.rect.x, self.rect.y, self.rect.w, self.rect.h, img);
         } else {
             // Fallback: draw a simple square.
             let bg = if self.checked {

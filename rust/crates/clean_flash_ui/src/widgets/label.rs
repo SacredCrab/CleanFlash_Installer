@@ -8,6 +8,7 @@ pub struct Label {
     pub text: String,
     pub color: u32,
     pub font_size: f32,
+    pub line_spacing: f32,
     pub visible: bool,
 }
 
@@ -18,6 +19,7 @@ impl Label {
             text: text.to_string(),
             color: Renderer::rgb(245, 245, 245),
             font_size,
+            line_spacing: 2.0,
             visible: true,
         }
     }
@@ -33,7 +35,7 @@ impl Label {
             &self.text,
             self.font_size,
             self.color,
-            2.0,
+            self.line_spacing,
         );
     }
 

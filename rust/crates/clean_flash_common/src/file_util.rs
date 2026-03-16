@@ -102,16 +102,154 @@ fn try_clear_readonly_and_delete(path: &Path) -> bool {
 }
 
 fn try_take_ownership_and_delete(path: &Path) -> bool {
-    // On Windows we could use SetNamedSecurityInfo to take ownership.
-    // For simplicity the Rust port clears read-only and retries.
+    use windows_sys::Win32::Foundation::{CloseHandle, LocalFree};
+    use windows_sys::Win32::Security::{
+        GetTokenInformation, TokenUser, DACL_SECURITY_INFORMATION,
+        OWNER_SECURITY_INFORMATION, TOKEN_QUERY, TOKEN_USER,
+    };
+    use windows_sys::Win32::Security::Authorization::{
+        SetEntriesInAclW, SetNamedSecurityInfoW, EXPLICIT_ACCESS_W,
+        SE_FILE_OBJECT, SET_ACCESS, TRUSTEE_IS_SID, TRUSTEE_IS_USER, TRUSTEE_W,
+    };
+    use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+
+    // Ensure SeTakeOwnershipPrivilege is enabled (idempotent).
+    crate::winapi_helpers::allow_modifications();
+
+    let path_wide: Vec<u16> = path
+        .to_string_lossy()
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+
+    unsafe {
+        let mut token = std::ptr::null_mut();
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) == 0 {
+            return try_clear_readonly_and_delete(path);
+        }
+
+        // Retrieve the current user's SID from the process token.
+        let mut buf = vec![0u8; 512];
+        let mut returned = 0u32;
+        let ok = GetTokenInformation(
+            token,
+            TokenUser,
+            buf.as_mut_ptr() as *mut _,
+            buf.len() as u32,
+            &mut returned,
+        );
+        CloseHandle(token);
+
+        if ok == 0 {
+            return try_clear_readonly_and_delete(path);
+        }
+
+        let token_user = &*(buf.as_ptr() as *const TOKEN_USER);
+        let sid = token_user.User.Sid;
+
+        // Transfer ownership of the file to the current user.
+        SetNamedSecurityInfoW(
+            path_wide.as_ptr() as *mut _,
+            SE_FILE_OBJECT,
+            OWNER_SECURITY_INFORMATION,
+            sid,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        );
+
+        // Build a new DACL that grants FullControl to the current user.
+        let mut ea = EXPLICIT_ACCESS_W {
+            grfAccessPermissions: 0x001F_01FF, // FILE_ALL_ACCESS
+            grfAccessMode: SET_ACCESS,
+            grfInheritance: 0, // NO_INHERITANCE
+            Trustee: TRUSTEE_W {
+                pMultipleTrustee: std::ptr::null_mut(),
+                MultipleTrusteeOperation: 0, // NO_MULTIPLE_TRUSTEE
+                TrusteeForm: TRUSTEE_IS_SID,
+                TrusteeType: TRUSTEE_IS_USER,
+                ptstrName: sid as *mut u16,
+            },
+        };
+        let mut new_dacl: *mut windows_sys::Win32::Security::ACL = std::ptr::null_mut();
+        SetEntriesInAclW(1, &mut ea, std::ptr::null_mut(), &mut new_dacl);
+
+        if !new_dacl.is_null() {
+            SetNamedSecurityInfoW(
+                path_wide.as_ptr() as *mut _,
+                SE_FILE_OBJECT,
+                DACL_SECURITY_INFORMATION,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                new_dacl,
+                std::ptr::null_mut(),
+            );
+            LocalFree(new_dacl as *mut _);
+        }
+    }
+
     try_clear_readonly_and_delete(path)
 }
 
 fn kill_locking_processes(path: &Path) {
-    // Use taskkill as a best-effort approach.
-    // The C# original enumerates all open handles, which requires complex
-    // NT API calls.  A simplified approach is acceptable for the port.
-    let _ = path; // Locking-process detection is a best-effort no-op here.
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::RestartManager::{
+        RmEndSession, RmGetList, RmRegisterResources, RmStartSession, RM_PROCESS_INFO,
+    };
+    use windows_sys::Win32::System::Threading::{
+        OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_TERMINATE,
+    };
+
+    let path_wide: Vec<u16> = path
+        .to_string_lossy()
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+
+    unsafe {
+        let mut session: u32 = 0;
+        // CCH_RM_SESSION_KEY = 32 chars; +1 for null terminator.
+        let mut session_key = [0u16; 33];
+        if RmStartSession(&mut session, 0, session_key.as_mut_ptr()) != 0 {
+            return;
+        }
+
+        let file_ptr = path_wide.as_ptr();
+        let files = [file_ptr];
+        RmRegisterResources(
+            session,
+            1,
+            files.as_ptr(),
+            0,
+            std::ptr::null_mut(),
+            0,
+            std::ptr::null_mut(),
+        );
+
+        let mut n_needed: u32 = 0;
+        let mut n_info: u32 = 10;
+        let mut procs: [RM_PROCESS_INFO; 10] = std::mem::zeroed();
+        let mut reboot_reasons: u32 = 0;
+        RmGetList(
+            session,
+            &mut n_needed,
+            &mut n_info,
+            procs.as_mut_ptr(),
+            &mut reboot_reasons,
+        );
+
+        for proc_info in procs.iter().take(n_info as usize) {
+            let pid = proc_info.Process.dwProcessId;
+            let handle = OpenProcess(PROCESS_TERMINATE, 0, pid);
+            if !handle.is_null() {
+                TerminateProcess(handle, 1);
+                WaitForSingleObject(handle, 5000);
+                CloseHandle(handle);
+            }
+        }
+
+        RmEndSession(session);
+    }
 }
 
 fn is_dir_empty(path: &Path) -> bool {

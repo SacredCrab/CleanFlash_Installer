@@ -12,10 +12,14 @@ fn main() {
         clean_flash_common::update_checker::FLASH_VERSION
     );
 
+    let scale = clean_flash_ui::get_dpi_scale();
+    let phys_w = (WIDTH as f32 * scale).round() as usize;
+    let phys_h = (HEIGHT as f32 * scale).round() as usize;
+
     let mut window = Window::new(
         &title,
-        WIDTH,
-        HEIGHT,
+        phys_w,
+        phys_h,
         WindowOptions {
             resize: false,
             ..WindowOptions::default()
@@ -28,8 +32,8 @@ fn main() {
 
     window.set_target_fps(60);
 
-    let mut renderer = Renderer::new(WIDTH, HEIGHT);
-    let mut form = UninstallForm::new();
+    let mut renderer = Renderer::new(phys_w, phys_h);
+    let mut form = UninstallForm::new(scale);
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let (mx, my) = window
@@ -40,7 +44,7 @@ fn main() {
         form.update_and_draw(&mut renderer, mx as i32, my as i32, mouse_down);
 
         window
-            .update_with_buffer(&renderer.buffer, WIDTH, HEIGHT)
+            .update_with_buffer(&renderer.buffer, phys_w, phys_h)
             .expect("Failed to update window buffer");
     }
 }

@@ -109,6 +109,29 @@ impl Renderer {
         }
     }
 
+    /// Draw an RGBA image scaled to (w, h) at (x, y) using nearest-neighbor interpolation.
+    pub fn draw_image_scaled(&mut self, x: i32, y: i32, w: i32, h: i32, img: &RgbaImage) {
+        if w <= 0 || h <= 0 || img.width == 0 || img.height == 0 {
+            return;
+        }
+        for dy in 0..h {
+            for dx in 0..w {
+                let src_x = (dx as f32 * img.width as f32 / w as f32) as usize;
+                let src_y = (dy as f32 * img.height as f32 / h as f32) as usize;
+                let idx = (src_y * img.width + src_x) * 4;
+                let r = img.data[idx];
+                let g = img.data[idx + 1];
+                let b = img.data[idx + 2];
+                let a = img.data[idx + 3];
+                if a == 255 {
+                    self.set_pixel(x + dx, y + dy, Self::rgb(r, g, b));
+                } else if a > 0 {
+                    self.blend_pixel(x + dx, y + dy, Self::rgb(r, g, b), a);
+                }
+            }
+        }
+    }
+
     /// Draw an RGBA image onto the framebuffer at (x, y).
     pub fn draw_image(&mut self, x: i32, y: i32, img: &RgbaImage) {
         for iy in 0..img.height as i32 {

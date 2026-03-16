@@ -39,6 +39,7 @@ struct ProgressState {
 }
 
 pub struct UninstallForm {
+    scale: f32,
     panel: Panel,
     title_text: String,
     subtitle_text: String,
@@ -64,37 +65,45 @@ pub struct UninstallForm {
 }
 
 impl UninstallForm {
-    pub fn new() -> Self {
+    pub fn new(scale: f32) -> Self {
+        let s = |v: i32| (v as f32 * scale).round() as i32;
+        let sf = |v: f32| v * scale;
+        let lbl = |x: i32, y: i32, text: &str, size: f32| {
+            let mut l = Label::new(s(x), s(y), text, sf(size));
+            l.line_spacing = sf(2.0);
+            l
+        };
+        let btn = |x: i32, y: i32, w: i32, h: i32, text: &str| GradientButton {
+            font_size: sf(13.0),
+            ..GradientButton::new(s(x), s(y), s(w), s(h), text)
+        };
+
         let version = update_checker::FLASH_VERSION;
         let flash_logo = load_resource_image("flashLogo.png");
         let fonts = FontManager::new();
 
         Self {
+            scale,
             panel: Panel::BeforeInstall,
             title_text: "Clean Flash Player".into(),
             subtitle_text: format!("built from version {} (China)", version),
             flash_logo,
-            prev_button: GradientButton::new(90, 286, 138, 31, "QUIT"),
-            next_button: GradientButton::new(497, 286, 138, 31, "UNINSTALL"),
-            before_label: Label::new(PANEL_X + 3, PANEL_Y + 2, BEFORE_TEXT, 13.0),
-            progress_header: Label::new(
-                PANEL_X + 3,
-                PANEL_Y,
-                "Uninstallation in progress...",
-                13.0,
-            ),
-            progress_label: Label::new(PANEL_X + 46, PANEL_Y + 30, "Preparing...", 13.0),
-            progress_bar: ProgressBar::new(PANEL_X + 49, PANEL_Y + 58, 451, 23),
-            complete_label: Label::new(PANEL_X, PANEL_Y, COMPLETE_TEXT, 13.0),
-            failure_text_label: Label::new(
+            prev_button: btn(90, 286, 138, 31, "QUIT"),
+            next_button: btn(497, 286, 138, 31, "UNINSTALL"),
+            before_label: lbl(PANEL_X + 3, PANEL_Y + 2, BEFORE_TEXT, 15.0),
+            progress_header: lbl(PANEL_X + 3, PANEL_Y, "Uninstallation in progress...", 15.0),
+            progress_label: lbl(PANEL_X + 46, PANEL_Y + 30, "Preparing...", 15.0),
+            progress_bar: ProgressBar::new(s(PANEL_X + 49), s(PANEL_Y + 58), s(451), s(23)),
+            complete_label: lbl(PANEL_X, PANEL_Y, COMPLETE_TEXT, 15.0),
+            failure_text_label: lbl(
                 PANEL_X + 3,
                 PANEL_Y + 2,
                 "Oops! The installation process has encountered an unexpected problem.\n\
 The following details could be useful. Press the Retry button to try again.",
-                13.0,
+                15.0,
             ),
             failure_detail: String::new(),
-            copy_error_button: GradientButton::new(PANEL_X + 441, PANEL_Y + 58, 104, 31, "COPY"),
+            copy_error_button: btn(PANEL_X + 441, PANEL_Y + 58, 104, 31, "COPY"),
             progress_state: Arc::new(Mutex::new(ProgressState {
                 label: "Preparing...".into(),
                 value: 0,
@@ -147,15 +156,17 @@ The following details could be useful. Press the Retry button to try again.",
 
         // Draw.
         renderer.clear(BG_COLOR);
-        renderer.draw_image(90, 36, &self.flash_logo);
+        let lw = (self.flash_logo.width as f32 * self.scale) as i32;
+        let lh = (self.flash_logo.height as f32 * self.scale) as i32;
+        renderer.draw_image_scaled(self.s(90), self.s(36), lw, lh, &self.flash_logo);
 
         self.fonts
-            .draw_text(renderer, 233, 54, &self.title_text, 32.0, FG_COLOR);
+            .draw_text(renderer, self.s(233), self.s(54), &self.title_text, self.sf(32.0), FG_COLOR);
         self.fonts
-            .draw_text(renderer, 280, 99, &self.subtitle_text, 17.0, FG_COLOR);
+            .draw_text(renderer, self.s(280), self.s(99), &self.subtitle_text, self.sf(17.0), FG_COLOR);
 
         // Separator.
-        renderer.fill_rect(0, 270, WIDTH as i32, 1, 0x00696969);
+        renderer.fill_rect(0, self.s(270), renderer.width as i32, self.s(1).max(1), 0x00696969);
 
         match self.panel {
             Panel::BeforeInstall => self.before_label.draw(renderer, &self.fonts),
@@ -174,12 +185,12 @@ The following details could be useful. Press the Retry button to try again.",
                 };
                 self.fonts.draw_text_multiline(
                     renderer,
-                    PANEL_X + 4,
-                    PANEL_Y + 44,
+                    self.s(PANEL_X + 4),
+                    self.s(PANEL_Y + 44),
                     detail,
-                    11.0,
+                    self.sf(11.0),
                     FG_COLOR,
-                    1.0,
+                    self.sf(1.0),
                 );
                 self.copy_error_button.draw(renderer, &self.fonts);
             }
@@ -188,6 +199,9 @@ The following details could be useful. Press the Retry button to try again.",
         self.prev_button.draw(renderer, &self.fonts);
         self.next_button.draw(renderer, &self.fonts);
     }
+
+    fn s(&self, v: i32) -> i32 { (v as f32 * self.scale).round() as i32 }
+    fn sf(&self, v: f32) -> f32 { v * self.scale }
 
     fn start_uninstall(&mut self) {
         self.panel = Panel::Install;

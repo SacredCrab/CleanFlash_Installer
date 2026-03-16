@@ -54,6 +54,7 @@ pub struct ProgressState {
 
 /// Full application state for the installer form.
 pub struct InstallForm {
+    scale: f32,
     pub panel: Panel,
     // Header
     pub title_text: String,
@@ -109,7 +110,24 @@ pub struct InstallForm {
 }
 
 impl InstallForm {
-    pub fn new() -> Self {
+    pub fn new(scale: f32) -> Self {
+        // Integer coordinate scaler.
+        let s = |v: i32| (v as f32 * scale).round() as i32;
+        // Font size / spacing scaler.
+        let sf = |v: f32| v * scale;
+        // Scaled label helper: font_size is the logical total (base+offset).
+        let lbl = |x: i32, y: i32, text: &str, size: f32| {
+            let mut l = Label::new(s(x), s(y), text, sf(size));
+            l.line_spacing = sf(2.0);
+            l
+        };
+        // Scaled button helper.
+        let btn = |x: i32, y: i32, w: i32, h: i32, text: &str| GradientButton {
+            font_size: sf(13.0),
+            ..GradientButton::new(s(x), s(y), s(w), s(h), text)
+        };
+        // Scaled checkbox helper.
+        let chk = |x: i32, y: i32| ImageCheckBox::with_size(s(x), s(y), s(21));
         let version = update_checker::FLASH_VERSION;
         let title_text = "Clean Flash Player".to_string();
         let subtitle_text = format!("built from version {} (China)", version);
@@ -123,102 +141,63 @@ impl InstallForm {
         let fonts = FontManager::new();
 
         Self {
+            scale,
             panel: Panel::Disclaimer,
             title_text,
             subtitle_text,
             flash_logo,
             checkbox_on,
             checkbox_off,
-            prev_button: GradientButton::new(90, 286, 138, 31, "QUIT"),
-            next_button: GradientButton::new(497, 286, 138, 31, "AGREE"),
+            prev_button: btn(90, 286, 138, 31, "QUIT"),
+            next_button: btn(497, 286, 138, 31, "AGREE"),
             // Disclaimer panel
-            disclaimer_label: Label::new(PANEL_X + 25, PANEL_Y, DISCLAIMER_TEXT, 13.0),
-            disclaimer_box: ImageCheckBox::new(PANEL_X, PANEL_Y),
+            disclaimer_label: lbl(PANEL_X + 25, PANEL_Y, DISCLAIMER_TEXT, 15.0),
+            disclaimer_box: chk(PANEL_X, PANEL_Y),
             // Choice panel
-            browser_ask_label: Label::new(
-                PANEL_X - 2,
-                PANEL_Y + 2,
-                "Which browser plugins would you like to install?",
-                13.0,
-            ),
-            pepper_box: ImageCheckBox::new(PANEL_X, PANEL_Y + 47),
-            pepper_label: Label::new(
-                PANEL_X + 24,
-                PANEL_Y + 47,
-                "Pepper API (PPAPI)\n(Chrome/Opera/Brave)",
-                13.0,
-            ),
-            netscape_box: ImageCheckBox::new(PANEL_X + 186, PANEL_Y + 47),
-            netscape_label: Label::new(
-                PANEL_X + 210,
-                PANEL_Y + 47,
-                "Netscape API (NPAPI)\n(Firefox/ESR/Waterfox)",
-                13.0,
-            ),
-            activex_box: ImageCheckBox::new(PANEL_X + 365, PANEL_Y + 47),
-            activex_label: Label::new(
-                PANEL_X + 389,
-                PANEL_Y + 47,
-                "ActiveX (OCX)\n(IE/Embedded/Desktop)",
-                13.0,
-            ),
+            browser_ask_label: lbl(PANEL_X - 2, PANEL_Y + 2, "Which browser plugins would you like to install?", 15.0),
+            pepper_box: chk(PANEL_X, PANEL_Y + 47),
+            pepper_label: lbl(PANEL_X + 24, PANEL_Y + 47, "Pepper API (PPAPI)\n(Chrome/Opera/Brave)", 15.0),
+            netscape_box: chk(PANEL_X + 186, PANEL_Y + 47),
+            netscape_label: lbl(PANEL_X + 210, PANEL_Y + 47, "Netscape API (NPAPI)\n(Firefox/ESR/Waterfox)", 15.0),
+            activex_box: chk(PANEL_X + 365, PANEL_Y + 47),
+            activex_label: lbl(PANEL_X + 389, PANEL_Y + 47, "ActiveX (OCX)\n(IE/Embedded/Desktop)", 15.0),
             // Player choice panel
-            player_ask_label: Label::new(
-                PANEL_X - 2,
-                PANEL_Y + 2,
-                "Would you like to install the standalone Flash Player?",
-                13.0,
-            ),
-            player_box: ImageCheckBox::new(PANEL_X, PANEL_Y + 47),
-            player_label: Label::new(
-                PANEL_X + 24,
-                PANEL_Y + 47,
-                "Install Standalone\nFlash Player",
-                13.0,
-            ),
-            player_desktop_box: ImageCheckBox::new(PANEL_X + 186, PANEL_Y + 47),
-            player_desktop_label: Label::new(
-                PANEL_X + 210,
-                PANEL_Y + 47,
-                "Create Shortcuts\non Desktop",
-                13.0,
-            ),
-            player_start_menu_box: ImageCheckBox::new(PANEL_X + 365, PANEL_Y + 47),
-            player_start_menu_label: Label::new(
-                PANEL_X + 389,
-                PANEL_Y + 47,
-                "Create Shortcuts\nin Start Menu",
-                13.0,
-            ),
+            player_ask_label: lbl(PANEL_X - 2, PANEL_Y + 2, "Would you like to install the standalone Flash Player?", 15.0),
+            player_box: chk(PANEL_X, PANEL_Y + 47),
+            player_label: lbl(PANEL_X + 24, PANEL_Y + 47, "Install Standalone\nFlash Player", 15.0),
+            player_desktop_box: chk(PANEL_X + 186, PANEL_Y + 47),
+            player_desktop_label: lbl(PANEL_X + 210, PANEL_Y + 47, "Create Shortcuts\non Desktop", 15.0),
+            player_start_menu_box: chk(PANEL_X + 365, PANEL_Y + 47),
+            player_start_menu_label: lbl(PANEL_X + 389, PANEL_Y + 47, "Create Shortcuts\nin Start Menu", 15.0),
             // Debug choice panel
-            debug_ask_label: Label::new(
+            debug_ask_label: lbl(
                 PANEL_X - 2,
                 PANEL_Y + 2,
                 "Would you like to install the debug version of Clean Flash Player?\n\
 You should only choose the debug version if you are planning to create Flash applications.\n\
 If you are not sure, simply press NEXT.",
-                13.0,
+                15.0,
             ),
-            debug_button: GradientButton::new(PANEL_X + 186, PANEL_Y + 65, 176, 31, "INSTALL DEBUG VERSION"),
+            debug_button: btn(PANEL_X + 186, PANEL_Y + 65, 176, 31, "INSTALL DEBUG VERSION"),
             debug_chosen: false,
             // Before install panel
-            before_install_label: Label::new(PANEL_X + 3, PANEL_Y + 2, "", 13.0),
+            before_install_label: lbl(PANEL_X + 3, PANEL_Y + 2, "", 15.0),
             // Install panel
-            install_header_label: Label::new(PANEL_X + 3, PANEL_Y, "Installation in progress...", 13.0),
-            progress_label: Label::new(PANEL_X + 46, PANEL_Y + 30, "Preparing...", 13.0),
-            progress_bar: ProgressBar::new(PANEL_X + 49, PANEL_Y + 58, 451, 23),
+            install_header_label: lbl(PANEL_X + 3, PANEL_Y, "Installation in progress...", 15.0),
+            progress_label: lbl(PANEL_X + 46, PANEL_Y + 30, "Preparing...", 15.0),
+            progress_bar: ProgressBar::new(s(PANEL_X + 49), s(PANEL_Y + 58), s(451), s(23)),
             // Complete panel
-            complete_label: Label::new(PANEL_X, PANEL_Y, "", 13.0),
+            complete_label: lbl(PANEL_X, PANEL_Y, "", 15.0),
             // Failure panel
-            failure_text_label: Label::new(
+            failure_text_label: lbl(
                 PANEL_X + 3,
                 PANEL_Y + 2,
                 "Oops! The installation process has encountered an unexpected problem.\n\
 The following details could be useful. Press the Retry button to try again.",
-                13.0,
+                15.0,
             ),
             failure_detail: String::new(),
-            copy_error_button: GradientButton::new(PANEL_X + 441, PANEL_Y + 58, 104, 31, "COPY"),
+            copy_error_button: btn(PANEL_X + 441, PANEL_Y + 58, 104, 31, "COPY"),
             progress_state: Arc::new(Mutex::new(ProgressState {
                 label: "Preparing...".into(),
                 value: 0,
@@ -229,6 +208,11 @@ The following details could be useful. Press the Retry button to try again.",
             prev_mouse_down: false,
         }
     }
+
+    /// Scale a logical integer coordinate to physical pixels.
+    fn s(&self, v: i32) -> i32 { (v as f32 * self.scale).round() as i32 }
+    /// Scale a logical float value to physical pixels.
+    fn sf(&self, v: f32) -> f32 { v * self.scale }
 
     /// Called each frame: handle input, update state, draw.
     pub fn update_and_draw(
@@ -257,30 +241,32 @@ The following details could be useful. Press the Retry button to try again.",
         renderer.clear(BG_COLOR);
 
         // Header: flash logo.
-        renderer.draw_image(90, 36, &self.flash_logo);
+        let lw = (self.flash_logo.width as f32 * self.scale) as i32;
+        let lh = (self.flash_logo.height as f32 * self.scale) as i32;
+        renderer.draw_image_scaled(self.s(90), self.s(36), lw, lh, &self.flash_logo);
 
         // Title.
         self.fonts.draw_text(
             renderer,
-            233,
-            54,
+            self.s(233),
+            self.s(54),
             &self.title_text,
-            32.0, // ~24pt Segoe UI
+            self.sf(32.0),
             FG_COLOR,
         );
 
         // Subtitle.
         self.fonts.draw_text(
             renderer,
-            280,
-            99,
+            self.s(280),
+            self.s(99),
             &self.subtitle_text,
-            17.0, // ~13pt Segoe UI
+            self.sf(17.0),
             FG_COLOR,
         );
 
-        // Separator line at y=270.
-        renderer.fill_rect(0, 270, WIDTH as i32, 1, Renderer::rgb(105, 105, 105));
+        // Separator line.
+        renderer.fill_rect(0, self.s(270), renderer.width as i32, self.s(1).max(1), Renderer::rgb(105, 105, 105));
 
         // Draw current panel.
         match self.panel {
@@ -628,7 +614,6 @@ including Clean Flash Player and older versions of Adobe Flash Player."
     fn draw_failure(&self, r: &mut Renderer) {
         self.failure_text_label.draw(r, &self.fonts);
         // Draw error detail as clipped text.
-        let detail_y = PANEL_Y + 44;
         let detail_text = if self.failure_detail.len() > 300 {
             &self.failure_detail[..300]
         } else {
@@ -636,12 +621,12 @@ including Clean Flash Player and older versions of Adobe Flash Player."
         };
         self.fonts.draw_text_multiline(
             r,
-            PANEL_X + 4,
-            detail_y,
+            self.s(PANEL_X + 4),
+            self.s(PANEL_Y + 44),
             detail_text,
-            11.0,
+            self.sf(11.0),
             FG_COLOR,
-            1.0,
+            self.sf(1.0),
         );
         self.copy_error_button.draw(r, &self.fonts);
     }
