@@ -1,0 +1,10 @@
+[package]
+name = "clean_flash_ui"
+version = "34.0.0"
+edition = "2021"
+
+[dependencies]
+ab_glyph = { workspace = true }
+image = { workspace = true }
+minifb = { workspace = true }
+windows-sys = { workspace = true }

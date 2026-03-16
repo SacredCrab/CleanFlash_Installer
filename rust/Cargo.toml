@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/clean_flash_common",
+    "crates/clean_flash_ui",
+    "crates/clean_flash_installer",
+    "crates/clean_flash_uninstaller",
+]
+
+[workspace.dependencies]
+ab_glyph = "0.2"
+sevenz-rust2 = { version = "0.20", default-feaures = false, features = ["compress", "util"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+minifb = "0.28"
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_Storage_FileSystem",
+    "Win32_System_SystemInformation",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile."release-lto"]
+inherits = "release"
+codegen-units = 1
+lto = "fat"
+strip = true

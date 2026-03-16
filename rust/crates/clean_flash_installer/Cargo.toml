@@ -1,0 +1,15 @@
+[package]
+name = "clean_flash_installer"
+version = "34.0.0"
+edition = "2021"
+authors = ["FlashPatch Team"]
+
+[dependencies]
+clean_flash_common = { path = "../clean_flash_common" }
+clean_flash_ui = { path = "../clean_flash_ui" }
+minifb = { workspace = true }
+windows-sys = { workspace = true }
+sevenz-rust2 = { workspace = true }
+
+[build-dependencies]
+winresource = "0.1"
