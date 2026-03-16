@@ -1,6 +1,6 @@
 use clean_flash_common::{redirection, uninstaller, update_checker, ProgressCallback};
 use clean_flash_ui::font::FontManager;
-use clean_flash_ui::renderer::{Renderer, RgbaImage};
+use clean_flash_ui::renderer::Renderer;
 use clean_flash_ui::widgets::button::GradientButton;
 use clean_flash_ui::widgets::label::Label;
 use clean_flash_ui::widgets::progress_bar::ProgressBar;
@@ -43,7 +43,7 @@ pub struct UninstallForm {
     panel: Panel,
     title_text: String,
     subtitle_text: String,
-    flash_logo: RgbaImage,
+    flash_logo_cache: clean_flash_ui::flash_logo::FlashLogoCache,
     prev_button: GradientButton,
     next_button: GradientButton,
     // Before uninstall
@@ -79,7 +79,7 @@ impl UninstallForm {
         };
 
         let version = update_checker::FLASH_VERSION;
-        let flash_logo = load_resource_image("flashLogo.png");
+
         let fonts = FontManager::new();
 
         Self {
@@ -87,7 +87,7 @@ impl UninstallForm {
             panel: Panel::BeforeInstall,
             title_text: "Clean Flash Player".into(),
             subtitle_text: format!("built from version {} (China)", version),
-            flash_logo,
+            flash_logo_cache: clean_flash_ui::flash_logo::FlashLogoCache::new(),
             prev_button: btn(90, 286, 138, 31, "QUIT"),
             next_button: btn(497, 286, 138, 31, "UNINSTALL"),
             before_label: lbl(PANEL_X + 3, PANEL_Y + 2, BEFORE_TEXT, 15.0),
@@ -156,9 +156,9 @@ The following details could be useful. Press the Retry button to try again.",
 
         // Draw.
         renderer.clear(BG_COLOR);
-        let lw = (self.flash_logo.width as f32 * self.scale) as i32;
-        let lh = (self.flash_logo.height as f32 * self.scale) as i32;
-        renderer.draw_image_scaled(self.s(90), self.s(36), lw, lh, &self.flash_logo);
+        self.flash_logo_cache.draw(
+            renderer, self.s(90), self.s(36), self.s(109), self.s(107),
+        );
 
         self.fonts
             .draw_text(renderer, self.s(233), self.s(54), &self.title_text, self.sf(32.0), FG_COLOR);
@@ -288,10 +288,3 @@ impl ProgressCallback for ThreadProgressCallback {
     }
 }
 
-fn load_resource_image(name: &str) -> RgbaImage {
-    let bytes: &[u8] = match name {
-        "flashLogo.png" => include_bytes!("../../../resources/flashLogo.png"),
-        _ => return RgbaImage::empty(),
-    };
-    RgbaImage::from_png_bytes(bytes)
-}

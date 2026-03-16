@@ -1,3 +1,4 @@
+pub mod flash_logo;
 pub mod font;
 pub mod renderer;
 pub mod widgets;

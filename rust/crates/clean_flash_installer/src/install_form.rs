@@ -2,7 +2,7 @@ use crate::install_flags::{self, InstallFlags};
 use crate::installer;
 use clean_flash_common::{uninstaller, redirection, update_checker, ProgressCallback};
 use clean_flash_ui::font::FontManager;
-use clean_flash_ui::renderer::{Renderer, RgbaImage};
+use clean_flash_ui::renderer::Renderer;
 use clean_flash_ui::widgets::button::GradientButton;
 use clean_flash_ui::widgets::checkbox::ImageCheckBox;
 use clean_flash_ui::widgets::label::Label;
@@ -59,10 +59,7 @@ pub struct InstallForm {
     // Header
     pub title_text: String,
     pub subtitle_text: String,
-    pub flash_logo: RgbaImage,
-    // Checkbox images
-    pub checkbox_on: RgbaImage,
-    pub checkbox_off: RgbaImage,
+    flash_logo_cache: clean_flash_ui::flash_logo::FlashLogoCache,
     // Navigation buttons
     pub prev_button: GradientButton,
     pub next_button: GradientButton,
@@ -132,12 +129,6 @@ impl InstallForm {
         let title_text = "Clean Flash Player".to_string();
         let subtitle_text = format!("built from version {} (China)", version);
 
-        // Load images from the common resources folder.
-        // These are loaded from the C# project's assets alongside the binary.
-        let flash_logo = load_resource_image("flashLogo.png");
-        let checkbox_on = load_resource_image("checkboxOn.png");
-        let checkbox_off = load_resource_image("checkboxOff.png");
-
         let fonts = FontManager::new();
 
         Self {
@@ -145,9 +136,7 @@ impl InstallForm {
             panel: Panel::Disclaimer,
             title_text,
             subtitle_text,
-            flash_logo,
-            checkbox_on,
-            checkbox_off,
+            flash_logo_cache: clean_flash_ui::flash_logo::FlashLogoCache::new(),
             prev_button: btn(90, 286, 138, 31, "QUIT"),
             next_button: btn(497, 286, 138, 31, "AGREE"),
             // Disclaimer panel
@@ -240,10 +229,10 @@ The following details could be useful. Press the Retry button to try again.",
         // ----- Draw -----
         renderer.clear(BG_COLOR);
 
-        // Header: flash logo.
-        let lw = (self.flash_logo.width as f32 * self.scale) as i32;
-        let lh = (self.flash_logo.height as f32 * self.scale) as i32;
-        renderer.draw_image_scaled(self.s(90), self.s(36), lw, lh, &self.flash_logo);
+        // Header: flash logo (cached software render).
+        self.flash_logo_cache.draw(
+            renderer, self.s(90), self.s(36), self.s(109), self.s(107),
+        );
 
         // Title.
         self.fonts.draw_text(
@@ -561,34 +550,27 @@ including Clean Flash Player and older versions of Adobe Flash Player."
     // ---- Drawing helpers ----
 
     fn draw_disclaimer(&self, r: &mut Renderer) {
-        self.disclaimer_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.disclaimer_box.draw(r);
         self.disclaimer_label.draw(r, &self.fonts);
     }
 
     fn draw_choice(&self, r: &mut Renderer) {
         self.browser_ask_label.draw(r, &self.fonts);
-        self.pepper_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.pepper_box.draw(r);
         self.pepper_label.draw(r, &self.fonts);
-        self.netscape_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.netscape_box.draw(r);
         self.netscape_label.draw(r, &self.fonts);
-        self.activex_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.activex_box.draw(r);
         self.activex_label.draw(r, &self.fonts);
     }
 
     fn draw_player_choice(&self, r: &mut Renderer) {
         self.player_ask_label.draw(r, &self.fonts);
-        self.player_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.player_box.draw(r);
         self.player_label.draw(r, &self.fonts);
-        self.player_desktop_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.player_desktop_box.draw(r);
         self.player_desktop_label.draw(r, &self.fonts);
-        self.player_start_menu_box
-            .draw(r, &self.checkbox_on, &self.checkbox_off);
+        self.player_start_menu_box.draw(r);
         self.player_start_menu_label.draw(r, &self.fonts);
     }
 
@@ -664,13 +646,3 @@ fn join_with_and(items: &[&str]) -> String {
     }
 }
 
-/// Try to load a resource image from the original C# project's asset folder.
-fn load_resource_image(name: &str) -> RgbaImage {
-    let bytes: &[u8] = match name {
-        "flashLogo.png" => include_bytes!("../../../resources/flashLogo.png"),
-        "checkboxOn.png" => include_bytes!("../../../resources/checkboxOn.png"),
-        "checkboxOff.png" => include_bytes!("../../../resources/checkboxOff.png"),
-        _ => return RgbaImage::empty(),
-    };
-    RgbaImage::from_png_bytes(bytes)
-}
