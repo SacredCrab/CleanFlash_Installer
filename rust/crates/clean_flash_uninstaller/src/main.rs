@@ -35,7 +35,10 @@ fn main() {
     let mut renderer = Renderer::new(phys_w, phys_h);
     let mut form = UninstallForm::new(scale);
 
-    while window.is_open() && !window.is_key_down(Key::Escape) {
+    while window.is_open() && !window.is_key_down(Key::Escape)
+        && !(window.is_key_down(Key::F4)
+            && (window.is_key_down(Key::LeftAlt) || window.is_key_down(Key::RightAlt)))
+    {
         let (mx, my) = window
             .get_mouse_pos(MouseMode::Clamp)
             .unwrap_or((0.0, 0.0));

@@ -109,6 +109,7 @@ impl SystemInfo {
         result
     }
 
+    #[cfg(windows)]
     pub fn is_legacy_windows(&self) -> bool {
         // Windows version < 6.2 (before Windows 8).
         unsafe {
@@ -123,14 +124,21 @@ impl SystemInfo {
                 || (info.dwMajorVersion == 6 && info.dwMinorVersion < 2)
         }
     }
+
+    #[cfg(not(windows))]
+    pub fn is_legacy_windows(&self) -> bool {
+        false
+    }
 }
 
+#[cfg(windows)]
 extern "system" {
     fn RtlGetVersion(
         lp_version_information: *mut windows_sys::Win32::System::SystemInformation::OSVERSIONINFOW,
     ) -> i32;
 }
 
+#[cfg(windows)]
 unsafe fn rtl_get_version(
     info: &mut windows_sys::Win32::System::SystemInformation::OSVERSIONINFOW,
 ) {

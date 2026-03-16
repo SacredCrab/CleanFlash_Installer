@@ -79,7 +79,8 @@ impl FontManager {
         }
     }
 
-    /// Draw multiline text, splitting on '\n'. Returns total height drawn.
+    /// Draw multiline text, splitting on '\n' and word-wrapping at `max_width`
+    /// (if > 0). Returns total height drawn.
     pub fn draw_text_multiline(
         &self,
         renderer: &mut Renderer,
@@ -89,17 +90,89 @@ impl FontManager {
         size: f32,
         color: u32,
         line_spacing: f32,
+        max_width: f32,
     ) -> f32 {
         let scaled = self.regular.as_scaled(size);
         let line_height = scaled.height() + line_spacing;
         let mut cy = y as f32;
 
         for line in text.split('\n') {
-            self.draw_text(renderer, x, cy as i32, line, size, color);
-            cy += line_height;
+            if max_width > 0.0 {
+                let wrapped = self.word_wrap(line, size, max_width);
+                for wl in &wrapped {
+                    self.draw_text(renderer, x, cy as i32, wl, size, color);
+                    cy += line_height;
+                }
+            } else {
+                self.draw_text(renderer, x, cy as i32, line, size, color);
+                cy += line_height;
+            }
         }
 
         cy - y as f32
+    }
+
+    /// Measure the total height of multiline text with word-wrapping.
+    pub fn measure_text_multiline(&self, text: &str, size: f32, line_spacing: f32, max_width: f32) -> (f32, f32) {
+        let scaled = self.regular.as_scaled(size);
+        let line_height = scaled.height() + line_spacing;
+        let mut total_lines = 0usize;
+        let mut overall_max_w: f32 = 0.0;
+
+        for line in text.split('\n') {
+            if max_width > 0.0 {
+                let wrapped = self.word_wrap(line, size, max_width);
+                for wl in &wrapped {
+                    let (lw, _) = self.measure_text(wl, size);
+                    if lw > overall_max_w {
+                        overall_max_w = lw;
+                    }
+                }
+                total_lines += wrapped.len();
+            } else {
+                let (lw, _) = self.measure_text(line, size);
+                if lw > overall_max_w {
+                    overall_max_w = lw;
+                }
+                total_lines += 1;
+            }
+        }
+
+        (overall_max_w, line_height * total_lines as f32)
+    }
+
+    /// Word-wrap a single line to fit within `max_width` pixels.
+    fn word_wrap(&self, line: &str, size: f32, max_width: f32) -> Vec<String> {
+        if line.is_empty() {
+            return vec![String::new()];
+        }
+
+        let mut result = Vec::new();
+        let mut current = String::new();
+        let mut current_w: f32 = 0.0;
+        let space_w = self.measure_text(" ", size).0;
+
+        for word in line.split_whitespace() {
+            let (ww, _) = self.measure_text(word, size);
+
+            if current.is_empty() {
+                // First word on this line — always add even if too wide.
+                current = word.to_string();
+                current_w = ww;
+            } else if current_w + space_w + ww <= max_width {
+                current.push(' ');
+                current.push_str(word);
+                current_w += space_w + ww;
+            } else {
+                // Wrap.
+                result.push(current);
+                current = word.to_string();
+                current_w = ww;
+            }
+        }
+
+        result.push(current);
+        result
     }
 }
 

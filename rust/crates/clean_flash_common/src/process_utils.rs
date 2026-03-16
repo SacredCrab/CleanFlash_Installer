@@ -13,7 +13,7 @@ pub fn run_process(program: &str, args: &[&str]) -> ExitedProcess {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    #[cfg(target_os = "windows")]
+    #[cfg(windows)]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
     let result = cmd.output();
@@ -42,7 +42,7 @@ pub fn run_unmanaged_process(program: &str, args: &[&str]) {
         .stdout(Stdio::null())
         .stderr(Stdio::null());
 
-    #[cfg(target_os = "windows")]
+    #[cfg(windows)]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
     let _ = cmd.status();

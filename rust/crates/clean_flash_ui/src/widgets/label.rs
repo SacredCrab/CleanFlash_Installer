@@ -2,7 +2,7 @@ use super::Rect;
 use crate::font::FontManager;
 use crate::renderer::Renderer;
 
-/// Simple static label for drawing text.
+/// Simple static label for drawing text with optional word-wrapping.
 pub struct Label {
     pub rect: Rect,
     pub text: String,
@@ -10,6 +10,8 @@ pub struct Label {
     pub font_size: f32,
     pub line_spacing: f32,
     pub visible: bool,
+    /// If > 0, text is word-wrapped to this pixel width.
+    pub max_width: f32,
 }
 
 impl Label {
@@ -21,6 +23,7 @@ impl Label {
             font_size,
             line_spacing: 2.0,
             visible: true,
+            max_width: 0.0,
         }
     }
 
@@ -36,6 +39,7 @@ impl Label {
             self.font_size,
             self.color,
             self.line_spacing,
+            self.max_width,
         );
     }
 
@@ -44,10 +48,13 @@ impl Label {
         if !self.visible || !mouse_released {
             return false;
         }
-        let (tw, _th) = fonts.measure_text(&self.text, self.font_size);
-        let lines = self.text.lines().count().max(1);
-        let approx_h = (self.font_size * lines as f32 + 2.0 * lines as f32) as i32;
-        let r = Rect::new(self.rect.x, self.rect.y, tw as i32 + 5, approx_h);
+        let (tw, th) = fonts.measure_text_multiline(
+            &self.text,
+            self.font_size,
+            self.line_spacing,
+            self.max_width,
+        );
+        let r = Rect::new(self.rect.x, self.rect.y, tw as i32 + 5, th as i32);
         r.contains(mx, my)
     }
 }

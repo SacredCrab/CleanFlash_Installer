@@ -19,14 +19,12 @@ const PANEL_X: i32 = 90;
 const PANEL_Y: i32 = 162;
 
 const DISCLAIMER_TEXT: &str = "I am aware that Adobe Flash Player is no longer supported, nor provided by Adobe Inc.\n\
-Clean Flash Player is a third-party version of Flash Player built from the latest Flash Player\n\
-version with adware removed.\n\n\
+Clean Flash Player is a third-party version of Flash Player built from the latest Flash Player version with adware removed.\n\n\
 Adobe is not required by any means to provide support for this version of Flash Player.";
 
 const COMPLETE_INSTALL_TEXT: &str = "Clean Flash Player has been successfully installed!\n\
 Don't forget, Flash Player is no longer compatible with new browsers.\n\n\
-For browser recommendations and Flash Player updates,\n\
-check out Clean Flash Player's website!";
+For browser recommendations and Flash Player updates, check out Clean Flash Player's website!";
 
 const COMPLETE_UNINSTALL_TEXT: &str = "\nAll versions of Flash Player have been successfully uninstalled.\n\n\
 If you ever change your mind, check out Clean Flash Player's website!";
@@ -116,6 +114,7 @@ impl InstallForm {
         let lbl = |x: i32, y: i32, text: &str, size: f32| {
             let mut l = Label::new(s(x), s(y), text, sf(size));
             l.line_spacing = sf(2.0);
+            l.max_width = sf((WIDTH as i32 - x - 60) as f32);
             l
         };
         // Scaled button helper.
@@ -437,8 +436,7 @@ The following details could be useful. Press the Retry button to try again.",
             self.before_install_label.text = format!(
                 "You are about to install Clean Flash Player.\n\
 Please close any browser windows running Flash content before you continue.\n\n\
-The installer will close all browser windows running Flash, uninstall previous versions of Flash Player and\n\
-Flash Center, and install Flash for {}.",
+The installer will close all browser windows running Flash, uninstall previous versions of Flash Player and Flash Center, and install Flash for {}.",
                 browser_str
             );
             self.next_button.text = "INSTALL".into();
@@ -446,8 +444,7 @@ Flash Center, and install Flash for {}.",
             self.before_install_label.text =
                 "You are about to uninstall Clean Flash Player.\n\
 Please close any browser windows running Flash content before you continue.\n\n\
-The installer will completely remove all versions of Flash Player from this computer,\n\
-including Clean Flash Player and older versions of Adobe Flash Player."
+The installer will completely remove all versions of Flash Player from this computer, including Clean Flash Player and older versions of Adobe Flash Player."
                     .to_string();
             self.next_button.text = "UNINSTALL".into();
         }
@@ -502,10 +499,10 @@ including Clean Flash Player and older versions of Adobe Flash Player."
             redirection::enable_redirection(redir);
 
             let mut state = progress.lock().unwrap();
-            state.done = true;
             if let Err(e) = result {
                 state.error = Some(e.to_string());
             }
+            state.done = true;
         });
     }
 
@@ -609,6 +606,7 @@ including Clean Flash Player and older versions of Adobe Flash Player."
             self.sf(11.0),
             FG_COLOR,
             self.sf(1.0),
+            self.sf((WIDTH as i32 - PANEL_X - 14) as f32),
         );
         self.copy_error_button.draw(r, &self.fonts);
     }

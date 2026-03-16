@@ -307,6 +307,7 @@ pub fn uninstall(form: &dyn ProgressCallback) -> Result<(), InstallError> {
 
     form.update_progress_label("Stopping Flash auto-updater task...", true);
     delete_task("Adobe Flash Player Updater");
+    delete_task("Adobe Flash Player Updater");
 
     form.update_progress_label("Stopping Flash auto-updater service...", true);
     delete_service("AdobeFlashPlayerUpdateSvc");

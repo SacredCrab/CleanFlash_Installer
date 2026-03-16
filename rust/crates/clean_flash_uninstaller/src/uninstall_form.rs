@@ -71,6 +71,7 @@ impl UninstallForm {
         let lbl = |x: i32, y: i32, text: &str, size: f32| {
             let mut l = Label::new(s(x), s(y), text, sf(size));
             l.line_spacing = sf(2.0);
+            l.max_width = sf((WIDTH as i32 - x - 10) as f32);
             l
         };
         let btn = |x: i32, y: i32, w: i32, h: i32, text: &str| GradientButton {
@@ -191,6 +192,7 @@ The following details could be useful. Press the Retry button to try again.",
                     self.sf(11.0),
                     FG_COLOR,
                     self.sf(1.0),
+                    self.sf((WIDTH as i32 - PANEL_X - 14) as f32),
                 );
                 self.copy_error_button.draw(renderer, &self.fonts);
             }
@@ -229,10 +231,10 @@ The following details could be useful. Press the Retry button to try again.",
             redirection::enable_redirection(redir);
 
             let mut state = progress.lock().unwrap();
-            state.done = true;
             if let Err(e) = result {
                 state.error = Some(e.to_string());
             }
+            state.done = true;
         });
     }
 

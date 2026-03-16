@@ -23,17 +23,20 @@ pub fn delete_file(path: &Path) {
     }
 
     // Retry loop with ownership acquisition.
-    for _ in 0..10 {
-        if try_take_ownership_and_delete(path) {
-            return;
+    #[cfg(windows)]
+    {
+        for _ in 0..10 {
+            if try_take_ownership_and_delete(path) {
+                return;
+            }
+            thread::sleep(Duration::from_millis(500));
         }
-        thread::sleep(Duration::from_millis(500));
-    }
 
-    // Last resort: kill any processes using the file, then delete.
-    kill_locking_processes(path);
-    thread::sleep(Duration::from_millis(500));
-    let _ = fs::remove_file(path);
+        // Last resort: kill any processes using the file, then delete.
+        kill_locking_processes(path);
+        thread::sleep(Duration::from_millis(500));
+        let _ = fs::remove_file(path);
+    }
 }
 
 /// Recursively delete all files (optionally matching `filename`) under `base_dir`.
@@ -84,9 +87,12 @@ pub fn wipe_folder(path: &Path) {
     // If folder is now empty, remove it.
     if is_dir_empty(path) {
         if fs::remove_dir(path).is_err() {
-            kill_locking_processes(path);
-            thread::sleep(Duration::from_millis(500));
-            let _ = fs::remove_dir(path);
+            #[cfg(windows)]
+            {
+                kill_locking_processes(path);
+                thread::sleep(Duration::from_millis(500));
+                let _ = fs::remove_dir(path);
+            }
         }
     }
 }
@@ -101,6 +107,7 @@ fn try_clear_readonly_and_delete(path: &Path) -> bool {
     fs::remove_file(path).is_ok()
 }
 
+#[cfg(windows)]
 fn try_take_ownership_and_delete(path: &Path) -> bool {
     use windows_sys::Win32::Foundation::{CloseHandle, LocalFree};
     use windows_sys::Win32::Security::{
@@ -191,6 +198,7 @@ fn try_take_ownership_and_delete(path: &Path) -> bool {
     try_clear_readonly_and_delete(path)
 }
 
+#[cfg(windows)]
 fn kill_locking_processes(path: &Path) {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::System::RestartManager::{

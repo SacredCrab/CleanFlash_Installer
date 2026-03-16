@@ -188,6 +188,12 @@ fn install_from_archive(
         Cursor::new(archive_bytes),
         ".",
         |entry, reader, _dest| {
+            // Skip directory entries — they have no file content.
+            if entry.is_directory() {
+                io::copy(reader, &mut io::sink()).map_err(sevenz_rust2::Error::from)?;
+                return Ok(true);
+            }
+
             let entry_name = entry.name().to_string();
             let parts: Vec<&str> = entry_name.split('/').collect();
             if parts.is_empty() {
