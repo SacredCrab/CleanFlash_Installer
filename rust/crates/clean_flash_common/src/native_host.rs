@@ -8,8 +8,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const MANIFEST_NAME: &str = "org.cleanflash.flash_player";
-const FIREFOX_MANIFEST_FILENAME: &str = "org.cleanflash.flash_player.json";
-const CHROME_MANIFEST_FILENAME: &str = "org.cleanflash.flash_player.json";
+const FIREFOX_MANIFEST_FILENAME: &str = "clean_flash_firefox.json";
+const CHROME_MANIFEST_FILENAME: &str = "clean_flash_chrome.json";
 const FIREFOX_ALLOWED_EXTENSION: &str = "flash-player@cleanflash.org";
 const ALLOWED_ORIGIN: &str = "chrome-extension://dcikaadaeajidejkoekdflmfdgeoldcb/";
 
