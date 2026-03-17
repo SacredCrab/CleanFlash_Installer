@@ -75,6 +75,31 @@ const WINDOWS_BROWSERS: &[WindowsBrowser] = &[
         native_messaging_reg_path: r"SOFTWARE\Mozilla\NativeMessagingHosts",
         kind: BrowserKind::Firefox,
     },
+    WindowsBrowser {
+        detect_keys: &[r"SOFTWARE\Mozilla\Mozilla Firefox Beta"],
+        native_messaging_reg_path: r"SOFTWARE\Mozilla\NativeMessagingHosts",
+        kind: BrowserKind::Firefox,
+    },
+    WindowsBrowser {
+        detect_keys: &[r"SOFTWARE\Mozilla\Firefox Developer Edition"],
+        native_messaging_reg_path: r"SOFTWARE\Mozilla\NativeMessagingHosts",
+        kind: BrowserKind::Firefox,
+    },
+    WindowsBrowser {
+        detect_keys: &[r"SOFTWARE\Mozilla\Mozilla Firefox ESR"],
+        native_messaging_reg_path: r"SOFTWARE\Mozilla\NativeMessagingHosts",
+        kind: BrowserKind::Firefox,
+    },
+    WindowsBrowser {
+        detect_keys: &[r"SOFTWARE\Zen Browser"],
+        native_messaging_reg_path: r"SOFTWARE\Zen Browser\NativeMessagingHosts",
+        kind: BrowserKind::Firefox,
+    },
+    WindowsBrowser {
+        detect_keys: &[r"SOFTWARE\LibreWolf"],
+        native_messaging_reg_path: r"SOFTWARE\LibreWolf\NativeMessagingHosts",
+        kind: BrowserKind::Firefox,
+    },
 ];
 
 struct BrowserManifestTarget {
@@ -186,6 +211,21 @@ fn get_non_windows_browser_targets(home: &Path) -> Vec<BrowserManifestTarget> {
                 kind: BrowserKind::Firefox,
             },
             BrowserManifestTarget {
+                detect_path: home.join("Library/Application Support/Firefox Developer Edition"),
+                manifest_dir: home.join("Library/Application Support/Mozilla/NativeMessagingHosts"),
+                kind: BrowserKind::Firefox,
+            },
+            BrowserManifestTarget {
+                detect_path: home.join("Library/Application Support/zen"),
+                manifest_dir: home.join("Library/Application Support/zen/NativeMessagingHosts"),
+                kind: BrowserKind::Firefox,
+            },
+            BrowserManifestTarget {
+                detect_path: home.join("Library/Application Support/LibreWolf"),
+                manifest_dir: home.join("Library/Application Support/LibreWolf/NativeMessagingHosts"),
+                kind: BrowserKind::Firefox,
+            },
+            BrowserManifestTarget {
                 detect_path: home.join("Library/Application Support/net.imput.helium"),
                 manifest_dir: home.join("Library/Application Support/net.imput.helium/NativeMessagingHosts"),
                 kind: BrowserKind::ChromeLike,
@@ -231,6 +271,16 @@ fn get_non_windows_browser_targets(home: &Path) -> Vec<BrowserManifestTarget> {
             BrowserManifestTarget {
                 detect_path: home.join(".mozilla"),
                 manifest_dir: home.join(".mozilla/native-messaging-hosts"),
+                kind: BrowserKind::Firefox,
+            },
+            BrowserManifestTarget {
+                detect_path: home.join(".zen"),
+                manifest_dir: home.join(".zen/native-messaging-hosts"),
+                kind: BrowserKind::Firefox,
+            },
+            BrowserManifestTarget {
+                detect_path: home.join(".librewolf"),
+                manifest_dir: home.join(".librewolf/native-messaging-hosts"),
                 kind: BrowserKind::Firefox,
             }
         ]
