@@ -1,6 +1,6 @@
 use crate::install_flags::{self, InstallFlags};
 use clean_flash_common::{
-    process_utils, registry, resources, system_info, InstallError, ProgressCallback,
+    native_host, process_utils, registry, resources, system_info, InstallError, ProgressCallback,
 };
 use std::env;
 use std::fs;
@@ -89,6 +89,7 @@ fn install_from_archive(
     let flash64_path = si.flash64_path.clone();
     let system32_path = si.system32_path.clone();
     let flash_program32_path = si.flash_program32_path.clone();
+    let native_host_dir = native_host::get_native_host_install_dir();
 
     let mut registry_to_apply: Vec<&str> = vec![resources::INSTALL_GENERAL];
 
@@ -179,6 +180,24 @@ fn install_from_archive(
                 registry_instructions: Some(resources::INSTALL_PP_64),
             },
         ),
+        (
+            "native-host-64",
+            InstallEntry {
+                install_text: "Installing native messaging host (64-bit)...",
+                required_flags: install_flags::NATIVE_HOST | install_flags::X64,
+                target_directory: native_host_dir.clone(),
+                registry_instructions: None,
+            },
+        ),
+        (
+            "native-host-32",
+            InstallEntry {
+                install_text: "Installing native messaging host (32-bit)...",
+                required_flags: install_flags::NATIVE_HOST,
+                target_directory: native_host_dir.clone(),
+                registry_instructions: None,
+            },
+        ),
     ];
 
     let legacy = si.is_legacy_windows();
@@ -202,24 +221,48 @@ fn install_from_archive(
 
             let filename = parts[0];
             let install_key = filename.split('-').next().unwrap_or(filename);
+            let is_pp32 = install_key == "pp32";
+            let is_pp64 = install_key == "pp64";
+            let should_extract_pepper_for_native_host =
+                flags.is_set(install_flags::NATIVE_HOST)
+                    && ((si.is_64bit && is_pp64) || (!si.is_64bit && is_pp32));
 
-            // Find the matching entry.
-            let Some((_key, install_entry)) = entries.iter().find(|(k, _)| *k == install_key)
+            // Find the matching entry: try exact match on full dirname first,
+            // then fall back to first segment before '-'.
+            let Some((_key, install_entry)) = entries
+                .iter()
+                .find(|(k, _)| *k == filename)
+                .or_else(|| entries.iter().find(|(k, _)| *k == install_key))
             else {
                 io::copy(reader, &mut io::sink()).map_err(sevenz_rust2::Error::from)?;
                 return Ok(true);
             };
 
             // Check required flags.
+            let should_install_by_flags = install_entry.required_flags == install_flags::NONE
+                || flags.is_set(install_entry.required_flags);
             if install_entry.required_flags != install_flags::NONE
                 && !flags.is_set(install_entry.required_flags)
+                && !(should_extract_pepper_for_native_host && (is_pp32 || is_pp64))
             {
                 io::copy(reader, &mut io::sink()).map_err(sevenz_rust2::Error::from)?;
                 return Ok(true);
             }
 
-            // Check debug flag match.
-            if install_entry.required_flags != install_flags::NONE {
+            // For native-host: on 64-bit use only native-host-64, on 32-bit use only native-host-32.
+            if filename == "native-host-32" && si.is_64bit {
+                io::copy(reader, &mut io::sink()).map_err(sevenz_rust2::Error::from)?;
+                return Ok(true);
+            }
+            if filename == "native-host-64" && !si.is_64bit {
+                io::copy(reader, &mut io::sink()).map_err(sevenz_rust2::Error::from)?;
+                return Ok(true);
+            }
+
+            // Check debug flag match (skip native-host entries from this check).
+            if install_entry.required_flags != install_flags::NONE
+                && (install_entry.required_flags & install_flags::NATIVE_HOST) == 0
+            {
                 let is_debug_file = filename.contains("-debug");
                 if flags.is_set(install_flags::DEBUG) != is_debug_file {
                     io::copy(reader, &mut io::sink()).map_err(sevenz_rust2::Error::from)?;
@@ -236,14 +279,31 @@ fn install_from_archive(
                 }
             }
 
-            form.update_progress_label(install_entry.install_text, true);
+            let extract_for_native_host_only = !should_install_by_flags
+                && should_extract_pepper_for_native_host
+                && (is_pp32 || is_pp64);
+
+            if extract_for_native_host_only {
+                form.update_progress_label(
+                    "Extracting Pepper files required by modern browser support...",
+                    true,
+                );
+            } else {
+                form.update_progress_label(install_entry.install_text, true);
+            }
+
+            let target_directory = if extract_for_native_host_only {
+                native_host_dir.clone()
+            } else {
+                install_entry.target_directory.clone()
+            };
 
             // Ensure target directory exists.
-            let _ = fs::create_dir_all(&install_entry.target_directory);
+            let _ = fs::create_dir_all(&target_directory);
 
             // Extract file: use just the file name (strip any path prefix).
             let out_name = parts.last().unwrap_or(&filename);
-            let out_path = install_entry.target_directory.join(out_name);
+            let out_path = target_directory.join(out_name);
 
             let mut buf = Vec::new();
             reader.read_to_end(&mut buf).map_err(sevenz_rust2::Error::from)?;
@@ -317,6 +377,11 @@ fn install_from_archive(
             let ocx64 = flash64_path.join(format!("Flash64_{}.ocx", si.version_path));
             register_activex(&ocx64.to_string_lossy())?;
         }
+    }
+
+    // Install native messaging host manifests for detected browsers.
+    if flags.is_set(install_flags::NATIVE_HOST) {
+        native_host::install_native_host(form)?;
     }
 
     Ok(())

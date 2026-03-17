@@ -1,4 +1,5 @@
 pub mod file_util;
+pub mod native_host;
 pub mod process_utils;
 pub mod redirection;
 pub mod registry;

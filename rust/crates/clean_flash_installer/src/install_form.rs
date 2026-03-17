@@ -26,6 +26,10 @@ const COMPLETE_INSTALL_TEXT: &str = "Clean Flash Player has been successfully in
 Don't forget, Flash Player is no longer compatible with new browsers.\n\n\
 For browser recommendations and Flash Player updates, check out Clean Flash Player's website!";
 
+const COMPLETE_INSTALL_WITH_EXTENSION_TEXT: &str = "Clean Flash Player has been successfully installed!\n\n\
+To use Flash in modern browsers, install the Clean Flash Player extension into your browser.\n\n\
+For Flash Player updates, check out Clean Flash Player's website!";
+
 const COMPLETE_UNINSTALL_TEXT: &str = "\nAll versions of Flash Player have been successfully uninstalled.\n\n\
 If you ever change your mind, check out Clean Flash Player's website!";
 
@@ -66,6 +70,8 @@ pub struct InstallForm {
     pub disclaimer_box: ImageCheckBox,
     // Choice panel (browser plugins)
     pub browser_ask_label: Label,
+    pub native_host_box: ImageCheckBox,
+    pub native_host_label: Label,
     pub pepper_box: ImageCheckBox,
     pub pepper_label: Label,
     pub netscape_box: ImageCheckBox,
@@ -130,7 +136,7 @@ impl InstallForm {
 
         let fonts = FontManager::new();
 
-        Self {
+        let mut form = Self {
             scale,
             panel: Panel::Disclaimer,
             title_text,
@@ -143,12 +149,14 @@ impl InstallForm {
             disclaimer_box: chk(PANEL_X, PANEL_Y),
             // Choice panel
             browser_ask_label: lbl(PANEL_X - 2, PANEL_Y + 2, "Which browser plugins would you like to install?", 15.0),
-            pepper_box: chk(PANEL_X, PANEL_Y + 47),
-            pepper_label: lbl(PANEL_X + 24, PANEL_Y + 47, "Pepper API (PPAPI)\n(Chrome/Opera/Brave)", 15.0),
-            netscape_box: chk(PANEL_X + 186, PANEL_Y + 47),
-            netscape_label: lbl(PANEL_X + 210, PANEL_Y + 47, "Netscape API (NPAPI)\n(Firefox/ESR/Waterfox)", 15.0),
-            activex_box: chk(PANEL_X + 365, PANEL_Y + 47),
-            activex_label: lbl(PANEL_X + 389, PANEL_Y + 47, "ActiveX (OCX)\n(IE/Embedded/Desktop)", 15.0),
+            native_host_box: chk(PANEL_X, PANEL_Y + 27),
+            native_host_label: lbl(PANEL_X + 24, PANEL_Y + 27, "Modern Browsers (MV3)\n(Chrome/Firefox/Edge)", 15.0),
+            pepper_box: chk(PANEL_X, PANEL_Y + 73),
+            pepper_label: lbl(PANEL_X + 24, PANEL_Y + 73, "Pepper API (PPAPI)\n(Chrome/Opera/Brave)", 15.0),
+            netscape_box: chk(PANEL_X + 186, PANEL_Y + 73),
+            netscape_label: lbl(PANEL_X + 210, PANEL_Y + 73, "Netscape API (NPAPI)\n(Firefox/ESR/Waterfox)", 15.0),
+            activex_box: chk(PANEL_X + 365, PANEL_Y + 73),
+            activex_label: lbl(PANEL_X + 389, PANEL_Y + 73, "ActiveX (OCX)\n(IE/Embedded/Desktop)", 15.0),
             // Player choice panel
             player_ask_label: lbl(PANEL_X - 2, PANEL_Y + 2, "Would you like to install the standalone Flash Player?", 15.0),
             player_box: chk(PANEL_X, PANEL_Y + 47),
@@ -194,7 +202,29 @@ The following details could be useful. Press the Retry button to try again.",
             })),
             fonts,
             prev_mouse_down: false,
+        };
+
+        // Modern browser support should be the default choice.
+        form.native_host_box.checked = true;
+
+        // On non-Windows platforms, disable legacy browser plugins and player options.
+        #[cfg(not(target_os = "windows"))]
+        {
+            form.pepper_box.checked = false;
+            form.pepper_box.enabled = false;
+            form.netscape_box.checked = false;
+            form.netscape_box.enabled = false;
+            form.activex_box.checked = false;
+            form.activex_box.enabled = false;
+            form.player_box.checked = false;
+            form.player_box.enabled = false;
+            form.player_desktop_box.checked = false;
+            form.player_desktop_box.enabled = false;
+            form.player_start_menu_box.checked = false;
+            form.player_start_menu_box.enabled = false;
         }
+
+        form
     }
 
     /// Scale a logical integer coordinate to physical pixels.
@@ -296,16 +326,30 @@ The following details could be useful. Press the Retry button to try again.",
                 }
             }
             Panel::Choice => {
+                self.native_host_box.toggle_if_clicked(mx, my, mouse_released);
                 self.pepper_box.toggle_if_clicked(mx, my, mouse_released);
                 self.netscape_box.toggle_if_clicked(mx, my, mouse_released);
                 self.activex_box.toggle_if_clicked(mx, my, mouse_released);
-                if self.pepper_label.clicked(mx, my, mouse_released, &self.fonts) {
+                if self.native_host_box.enabled
+                    && self
+                        .native_host_label
+                        .clicked(mx, my, mouse_released, &self.fonts)
+                {
+                    self.native_host_box.checked = !self.native_host_box.checked;
+                }
+                if self.pepper_box.enabled
+                    && self.pepper_label.clicked(mx, my, mouse_released, &self.fonts)
+                {
                     self.pepper_box.checked = !self.pepper_box.checked;
                 }
-                if self.netscape_label.clicked(mx, my, mouse_released, &self.fonts) {
+                if self.netscape_box.enabled
+                    && self.netscape_label.clicked(mx, my, mouse_released, &self.fonts)
+                {
                     self.netscape_box.checked = !self.netscape_box.checked;
                 }
-                if self.activex_label.clicked(mx, my, mouse_released, &self.fonts) {
+                if self.activex_box.enabled
+                    && self.activex_label.clicked(mx, my, mouse_released, &self.fonts)
+                {
                     self.activex_box.checked = !self.activex_box.checked;
                 }
             }
@@ -313,13 +357,25 @@ The following details could be useful. Press the Retry button to try again.",
                 self.player_box.toggle_if_clicked(mx, my, mouse_released);
                 self.player_desktop_box.toggle_if_clicked(mx, my, mouse_released);
                 self.player_start_menu_box.toggle_if_clicked(mx, my, mouse_released);
-                if self.player_label.clicked(mx, my, mouse_released, &self.fonts) {
+                if self.player_box.enabled
+                    && self.player_label.clicked(mx, my, mouse_released, &self.fonts)
+                {
                     self.player_box.checked = !self.player_box.checked;
                 }
-                if self.player_desktop_label.clicked(mx, my, mouse_released, &self.fonts) && self.player_box.checked {
+                if self.player_desktop_box.enabled
+                    && self
+                        .player_desktop_label
+                        .clicked(mx, my, mouse_released, &self.fonts)
+                    && self.player_box.checked
+                {
                     self.player_desktop_box.checked = !self.player_desktop_box.checked;
                 }
-                if self.player_start_menu_label.clicked(mx, my, mouse_released, &self.fonts) && self.player_box.checked {
+                if self.player_start_menu_box.enabled
+                    && self
+                        .player_start_menu_label
+                        .clicked(mx, my, mouse_released, &self.fonts)
+                    && self.player_box.checked
+                {
                     self.player_start_menu_box.checked = !self.player_start_menu_box.checked;
                 }
                 // Disable sub-options when player unchecked.
@@ -359,7 +415,13 @@ The following details could be useful. Press the Retry button to try again.",
             Panel::Choice => self.open_disclaimer(),
             Panel::PlayerChoice => self.open_choice(),
             Panel::DebugChoice => self.open_player_choice(),
-            Panel::BeforeInstall => self.open_debug_choice(),
+            Panel::BeforeInstall => {
+                if cfg!(target_os = "windows") {
+                    self.open_debug_choice();
+                } else {
+                    self.open_choice();
+                }
+            }
             _ => {}
         }
     }
@@ -367,7 +429,13 @@ The following details could be useful. Press the Retry button to try again.",
     fn on_next_clicked(&mut self) {
         match self.panel {
             Panel::Disclaimer => self.open_choice(),
-            Panel::Choice => self.open_player_choice(),
+            Panel::Choice => {
+                if cfg!(target_os = "windows") {
+                    self.open_player_choice();
+                } else {
+                    self.open_before_install();
+                }
+            }
             Panel::PlayerChoice => self.open_debug_choice(),
             Panel::DebugChoice => self.open_before_install(),
             Panel::BeforeInstall | Panel::Failure => self.open_install(),
@@ -418,10 +486,13 @@ The following details could be useful. Press the Retry button to try again.",
         self.prev_button.enabled = true;
 
         let has_plugins =
-            self.pepper_box.checked || self.netscape_box.checked || self.activex_box.checked || self.player_box.checked;
+            self.native_host_box.checked || self.pepper_box.checked || self.netscape_box.checked || self.activex_box.checked || self.player_box.checked;
 
         if has_plugins {
             let mut browsers = Vec::new();
+            if self.native_host_box.checked {
+                browsers.push("Modern Browsers (via extension)");
+            }
             if self.pepper_box.checked {
                 browsers.push("Google Chrome");
             }
@@ -458,6 +529,7 @@ The installer will completely remove all versions of Flash Player from this comp
         self.next_button.visible = false;
 
         let mut flags = InstallFlags::new();
+        flags.set_conditionally(self.native_host_box.checked, install_flags::NATIVE_HOST);
         flags.set_conditionally(self.pepper_box.checked, install_flags::PEPPER);
         flags.set_conditionally(self.netscape_box.checked, install_flags::NETSCAPE);
         flags.set_conditionally(self.activex_box.checked, install_flags::ACTIVEX);
@@ -529,7 +601,9 @@ The installer will completely remove all versions of Flash Player from this comp
         self.prev_button.enabled = true;
         self.next_button.visible = false;
 
-        if self.pepper_box.checked || self.netscape_box.checked || self.activex_box.checked {
+        if self.native_host_box.checked {
+            self.complete_label.text = COMPLETE_INSTALL_WITH_EXTENSION_TEXT.to_string();
+        } else if self.pepper_box.checked || self.netscape_box.checked || self.activex_box.checked {
             self.complete_label.text = COMPLETE_INSTALL_TEXT.to_string();
         } else {
             self.complete_label.text = COMPLETE_UNINSTALL_TEXT.to_string();
@@ -553,6 +627,8 @@ The installer will completely remove all versions of Flash Player from this comp
 
     fn draw_choice(&self, r: &mut Renderer) {
         self.browser_ask_label.draw(r, &self.fonts);
+        self.native_host_box.draw(r);
+        self.native_host_label.draw(r, &self.fonts);
         self.pepper_box.draw(r);
         self.pepper_label.draw(r, &self.fonts);
         self.netscape_box.draw(r);

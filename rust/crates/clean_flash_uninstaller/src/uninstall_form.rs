@@ -21,7 +21,7 @@ including Clean Flash Player and older versions of Adobe Flash Player.";
 const COMPLETE_TEXT: &str = "\nAll versions of Flash Player have been successfully uninstalled.\n\n\
 If you ever change your mind, check out Clean Flash Player's website!";
 
-const UNINSTALL_TICKS: i32 = 9;
+const UNINSTALL_TICKS: i32 = 10;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Panel {

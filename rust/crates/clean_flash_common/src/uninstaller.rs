@@ -1,5 +1,5 @@
 use crate::{
-    file_util, process_utils, registry, resources, system_info, winapi_helpers, InstallError,
+    file_util, native_host, process_utils, registry, resources, system_info, winapi_helpers, InstallError,
     ProgressCallback,
 };
 use std::env;
@@ -21,6 +21,7 @@ const PROCESSES_TO_KILL: &[&str] = &[
     "flashplayerapp",
     "flashplayer_sa",
     "flashplayer_sa_debug",
+    "flash-player-host",
 ];
 
 const CONDITIONAL_PROCESSES: &[&str] = &[
@@ -328,6 +329,8 @@ pub fn uninstall(form: &dyn ProgressCallback) -> Result<(), InstallError> {
 
     form.update_progress_label("Removing Flash Player...", true);
     delete_flash_player();
+
+    native_host::uninstall_native_host(form);
 
     Ok(())
 }

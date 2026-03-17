@@ -1,4 +1,4 @@
-//#![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 mod install_flags;
 mod install_form;
@@ -34,8 +34,8 @@ fn main() {
     // Set window icon from the resource embedded by build.rs.
     clean_flash_ui::set_window_icon(&window);
 
-    // Cap at ~60 fps.
-    window.set_target_fps(60);
+    // Cap at ~24 fps.
+    window.set_target_fps(24);
 
     // Renderer operates at physical resolution; the form layout is scaled accordingly.
     let mut renderer = Renderer::new(phys_w, phys_h);

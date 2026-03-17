@@ -9,8 +9,9 @@ pub const PLAYER_START_MENU: u32 = 1 << 4;
 pub const PLAYER_DESKTOP: u32 = 1 << 5;
 pub const X64: u32 = 1 << 6;
 pub const DEBUG: u32 = 1 << 7;
+pub const NATIVE_HOST: u32 = 1 << 8;
 
-const UNINSTALL_TICKS: u32 = 9;
+const UNINSTALL_TICKS: u32 = 10;
 const INSTALL_GENERAL_TICKS: u32 = 5;
 
 #[derive(Clone, Copy)]
@@ -62,6 +63,10 @@ impl InstallFlags {
         }
 
         if self.is_set(PLAYER) {
+            ticks += 1;
+        }
+
+        if self.is_set(NATIVE_HOST) {
             ticks += 1;
         }
 
