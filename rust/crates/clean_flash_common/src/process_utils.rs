@@ -50,6 +50,7 @@ pub fn run_unmanaged_process(program: &str, args: &[&str]) {
 
 /// Collect the names of DLL modules loaded in a given process.
 /// Used to detect whether a browser has Flash DLLs loaded.
+#[cfg(windows)]
 pub fn collect_modules(pid: u32) -> Vec<String> {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::System::ProcessStatus::{
@@ -107,4 +108,9 @@ pub fn collect_modules(pid: u32) -> Vec<String> {
     }
 
     modules
+}
+
+#[cfg(not(windows))]
+pub fn collect_modules(_pid: u32) -> Vec<String> {
+    Vec::new()
 }

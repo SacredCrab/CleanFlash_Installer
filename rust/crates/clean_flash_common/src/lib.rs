@@ -5,7 +5,15 @@ pub mod redirection;
 pub mod registry;
 pub mod resources;
 pub mod system_info;
+
+#[cfg(windows)]
+#[path = "uninstaller_windows.rs"]
 pub mod uninstaller;
+
+#[cfg(not(windows))]
+#[path = "uninstaller_linux.rs"]
+pub mod uninstaller;
+
 pub mod update_checker;
 pub mod winapi_helpers;
 

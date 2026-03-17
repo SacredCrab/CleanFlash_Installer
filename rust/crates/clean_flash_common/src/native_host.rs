@@ -8,8 +8,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const MANIFEST_NAME: &str = "org.cleanflash.flash_player";
-const FIREFOX_MANIFEST_FILENAME: &str = "org.cleanflash.flash_player.firefox.json";
-const CHROME_MANIFEST_FILENAME: &str = "org.cleanflash.flash_player.chrome.json";
+const FIREFOX_MANIFEST_FILENAME: &str = "org.cleanflash.flash_player.json";
+const CHROME_MANIFEST_FILENAME: &str = "org.cleanflash.flash_player.json";
 const FIREFOX_ALLOWED_EXTENSION: &str = "flash-player@cleanflash.org";
 const ALLOWED_ORIGIN: &str = "chrome-extension://dcikaadaeajidejkoekdflmfdgeoldcb/";
 
@@ -402,12 +402,7 @@ pub fn uninstall_native_host(form: &dyn ProgressCallback) {
 pub fn uninstall_native_host(form: &dyn ProgressCallback) {
     form.update_progress_label("Removing native messaging host...", true);
 
-    // Remove the host folder and everything inside it.
-    let install_dir = get_native_host_install_dir();
-    let host_exe = install_dir.join(HOST_BINARY_NAME);
-    let _ = fs::remove_file(&host_exe);
-    let _ = fs::remove_dir_all(&install_dir);
-
+    // Remove the manifests.
     let home = match std::env::var("HOME") {
         Ok(h) => PathBuf::from(h),
         Err(_) => return,
@@ -417,6 +412,12 @@ pub fn uninstall_native_host(form: &dyn ProgressCallback) {
         let _ = fs::remove_file(target.manifest_dir.join(CHROME_MANIFEST_FILENAME));
         let _ = fs::remove_file(target.manifest_dir.join(FIREFOX_MANIFEST_FILENAME));
     }
+
+    // Remove the host folder and everything inside it.
+    let install_dir = get_native_host_install_dir();
+    let host_exe = install_dir.join(HOST_BINARY_NAME);
+    let _ = fs::remove_file(&host_exe);
+    let _ = fs::remove_dir_all(&install_dir);
 }
 
 /// Check if a registry key exists under HKCU.

@@ -2,6 +2,13 @@
 
 mod install_flags;
 mod install_form;
+
+#[cfg(windows)]
+#[path = "installer_windows.rs"]
+mod installer;
+
+#[cfg(not(windows))]
+#[path = "installer_linux.rs"]
 mod installer;
 
 use install_form::{InstallForm, HEIGHT, WIDTH};

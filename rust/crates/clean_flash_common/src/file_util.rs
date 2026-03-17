@@ -1,7 +1,10 @@
+#[cfg(windows)]
 use crate::uninstaller;
 use std::fs;
 use std::path::Path;
+#[cfg(windows)]
 use std::thread;
+#[cfg(windows)]
 use std::time::Duration;
 
 /// Attempt to delete a single file, retrying with escalating measures if needed.
@@ -10,7 +13,8 @@ pub fn delete_file(path: &Path) {
         return;
     }
 
-    // Unregister ActiveX .ocx files before deletion.
+    // Unregister ActiveX .ocx files before deletion (Windows only).
+    #[cfg(windows)]
     if let Some(ext) = path.extension() {
         if ext.eq_ignore_ascii_case("ocx") {
             let _ = uninstaller::unregister_activex(&path.to_string_lossy());

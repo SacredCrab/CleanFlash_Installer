@@ -204,6 +204,7 @@ fn should_kill_conditional_process(name: &str, pid: u32) -> bool {
     })
 }
 
+#[cfg(windows)]
 fn stop_processes() {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::System::Threading::{
@@ -237,6 +238,12 @@ fn stop_processes() {
     }
 }
 
+#[cfg(not(windows))]
+fn stop_processes() {
+    // Process termination via Windows API not available on Unix.
+}
+
+#[cfg(windows)]
 fn get_process_creation_time(pid: u32) -> u64 {
     use windows_sys::Win32::Foundation::{CloseHandle, FILETIME};
     use windows_sys::Win32::System::Threading::{GetProcessTimes, OpenProcess, PROCESS_QUERY_INFORMATION};
@@ -255,6 +262,12 @@ fn get_process_creation_time(pid: u32) -> u64 {
     }
 }
 
+#[cfg(not(windows))]
+fn get_process_creation_time(_pid: u32) -> u64 {
+    0
+}
+
+#[cfg(windows)]
 fn enumerate_processes() -> Vec<(u32, String)> {
     use windows_sys::Win32::System::ProcessStatus::{EnumProcesses, GetModuleBaseNameW};
     use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
@@ -300,6 +313,11 @@ fn enumerate_processes() -> Vec<(u32, String)> {
     }
 
     results
+}
+
+#[cfg(not(windows))]
+fn enumerate_processes() -> Vec<(u32, String)> {
+    Vec::new()
 }
 
 /// Perform the full uninstallation sequence.

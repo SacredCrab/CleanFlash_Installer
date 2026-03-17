@@ -1,9 +1,16 @@
 /// Enable SeRestorePrivilege and SeTakeOwnershipPrivilege for the current process.
+#[cfg(windows)]
 pub fn allow_modifications() {
     let _ = modify_privilege("SeRestorePrivilege\0", true);
     let _ = modify_privilege("SeTakeOwnershipPrivilege\0", true);
 }
 
+#[cfg(not(windows))]
+pub fn allow_modifications() {
+    // No privilege modifications needed on Unix.
+}
+
+#[cfg(windows)]
 fn modify_privilege(name: &str, enable: bool) -> Result<(), ()> {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::Security::{

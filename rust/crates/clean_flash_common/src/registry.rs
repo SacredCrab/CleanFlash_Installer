@@ -3,6 +3,7 @@ use std::fs;
 use std::io::Write;
 
 /// Apply registry contents by writing a .reg file and importing with reg.exe.
+#[cfg(windows)]
 pub fn apply_registry(entries: &[&str]) -> Result<(), InstallError> {
     let combined = entries.join("\n\n");
     let filled = system_info::fill_string(&combined);
@@ -40,5 +41,10 @@ pub fn apply_registry(entries: &[&str]) -> Result<(), InstallError> {
         )));
     }
 
+    Ok(())
+}
+
+#[cfg(not(windows))]
+pub fn apply_registry(_entries: &[&str]) -> Result<(), InstallError> {
     Ok(())
 }

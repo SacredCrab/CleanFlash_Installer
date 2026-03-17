@@ -9,7 +9,7 @@ members = [
 
 [workspace.dependencies]
 ab_glyph = "0.2"
-sevenz-rust2 = { version = "0.20", default-feaures = false, features = ["compress", "util"] }
+sevenz-rust2 = { version = "0.20", default-features = false, features = ["compress", "util"] }
 minifb = "0.28"
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
