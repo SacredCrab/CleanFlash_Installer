@@ -399,7 +399,7 @@ pub fn install(
     // The 7z archive is embedded in the binary via include_bytes!.
     // For the port, we expect it at a known resource path; if not present,
     // this is a no-op placeholder.
-    let archive_bytes: &[u8] = include_bytes!("../cleanflash.7z");
+    let archive_bytes: &[u8] = include_bytes!("../cleanflash-win.7z");
 
     if archive_bytes.is_empty() {
         // Nothing to extract; still apply the rest of the steps.

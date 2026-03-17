@@ -88,7 +88,10 @@ pub fn install(
         return Ok(());
     }
 
-    let archive_bytes: &[u8] = include_bytes!("../cleanflash.7z");
+    #[cfg(target_os = "linux")]
+    let archive_bytes: &[u8] = include_bytes!("../cleanflash-linux.7z");
+    #[cfg(target_os = "macos")]
+    let archive_bytes: &[u8] = include_bytes!("../cleanflash-macos.7z");
 
     if archive_bytes.is_empty() {
         return Ok(());

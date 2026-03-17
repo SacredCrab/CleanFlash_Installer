@@ -116,14 +116,21 @@ pub fn get_native_host_install_dir() -> PathBuf {
 #[cfg(not(windows))]
 pub fn get_native_host_install_dir() -> PathBuf {
     if cfg!(target_os = "macos") {
-        PathBuf::from("/Library/Application Support/Clean Flash")
-    } else {
+        // Install to ~/Library/Application Support/Clean Flash instead
+        if let Ok(home) = std::env::var("HOME") {
+            PathBuf::from(home).join("Library/Application Support/Clean Flash")
+        } else {
+            PathBuf::from("/Library/Application Support/Clean Flash")
+        }
+    } else if cfg!(target_os = "linux") {
         // Linux
         if let Ok(home) = std::env::var("HOME") {
             PathBuf::from(home).join(".cleanflash")
         } else {
             PathBuf::from("/tmp/.cleanflash")
         }
+    } else {
+        unreachable!()
     }
 }
 
@@ -178,6 +185,11 @@ fn get_non_windows_browser_targets(home: &Path) -> Vec<BrowserManifestTarget> {
                 manifest_dir: home.join("Library/Application Support/Mozilla/NativeMessagingHosts"),
                 kind: BrowserKind::Firefox,
             },
+            BrowserManifestTarget {
+                detect_path: home.join("Library/Application Support/net.imput.helium"),
+                manifest_dir: home.join("Library/Application Support/net.imput.helium/NativeMessagingHosts"),
+                kind: BrowserKind::ChromeLike,
+            }
         ]
     } else {
         vec![
@@ -212,10 +224,15 @@ fn get_non_windows_browser_targets(home: &Path) -> Vec<BrowserManifestTarget> {
                 kind: BrowserKind::ChromeLike,
             },
             BrowserManifestTarget {
+                detect_path: home.join(".config/net.imput.helium"),
+                manifest_dir: home.join(".config/net.imput.helium/NativeMessagingHosts"),
+                kind: BrowserKind::ChromeLike,
+            },
+            BrowserManifestTarget {
                 detect_path: home.join(".mozilla"),
                 manifest_dir: home.join(".mozilla/native-messaging-hosts"),
                 kind: BrowserKind::Firefox,
-            },
+            }
         ]
     }
 }
