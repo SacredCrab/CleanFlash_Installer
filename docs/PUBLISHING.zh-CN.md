@@ -16,24 +16,28 @@ TCOTC/CleanFlash_Installer`，这是最直观的来源说明。
 
 5. 创建公开 Fork。
 6. 将本维护分支的提交推送到默认分支。
-7. 在仓库 Settings → Actions → General 中确认工作流具有
-   `Read and write permissions`；工作流还在 YAML 中显式声明了
-   `contents: write`。
+7. GitHub Actions 使用工作流内的最小权限声明：构建只读源码，提升已测试
+   Artifact 时才申请 `actions: read` 与 `contents: write`。
 8. 如果 GitHub 默认暂停了 Fork 的 Actions，进入 Actions 页确认启用。
 
 ## 首次 Release
 
-第一次推送建议使用普通提交信息，让工作流只生成 Actions Artifact。下载该
-Artifact，在真实 Windows 环境完成安装、目标程序、升级和卸载测试后，再触发公开
-Release。不要把“工作流构建成功”等同于“运行时已经验证”。
+第一次推送运行 `Build ReleaseOnly installer`，它只生成 Actions Artifact，
+不会直接创建公开 Release。下载该 Artifact，在真实 Windows 环境完成安装、目标程序、
+升级和卸载测试。不要把“工作流构建成功”等同于“运行时已经验证”。
 
-有两种触发方式：
+测试完成后运行 `Promote tested ReleaseOnly artifact`，填写：
 
-- 推送提交信息含 `[release]` 的提交；
-- 在 Actions → `Build ReleaseOnly installer` → `Run workflow` 中把
-  `publish_release` 设为 `true`。
+- 成功构建的 workflow run ID；
+- 实际完成运行测试的安装器 SHA-256；
+- 该构建使用的准确源码提交 SHA；
+- 新的 Release 标签。
 
-工作流成功后应出现：
+提升工作流会下载既有 Artifact、核对输入哈希与 `SHA256SUMS.txt`，创建草稿
+Release，重新下载两个草稿附件并再次校验，全部通过后才公开。这样不会在运行测试后
+重新编译出哈希不同的 EXE。
+
+首次成功后应出现：
 
 ```text
 v34.0.0.376-release-only.1

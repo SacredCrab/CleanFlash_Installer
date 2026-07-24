@@ -16,13 +16,18 @@
 - `CleanFlash_34.0.0.376_ReleaseOnly_Installer.exe`
 - `SHA256SUMS.txt`
 
-请在运行前核对 SHA-256。曾完成实际稳定性验证的安装包参考 SHA-256 为：
+请在运行前核对 SHA-256。本 Release 中已完成真实 Windows 测试的安装包为：
 
 ```text
-4e28c1a2e982294ede1dc0f04c36611dd6eea5a2bfecfb7a653cb4597bc03034
+dae566c0f9618558d3bcc1bb600eaf1a93d9bd2a1c179cc0b74df6fb4ef309f4
 ```
 
-如果 Release 附件的哈希与此不同，它可能是由公开工作流重新构建的等价版本，但不能宣称与上述实测文件字节完全相同。每个 Release 都应以同页 `SHA256SUMS.txt` 为准。
+发布流程会把完成测试的 Actions Artifact 原样提升为 Release，不在测试后重新编译。
+如果 `v34.0.0.376-release-only.1` 的 EXE 哈希与上值不同，请不要运行并提交 Issue。
+
+更早完成约 4 小时稳定性测试的参考包 SHA-256 为
+`4e28c1a2e982294ede1dc0f04c36611dd6eea5a2bfecfb7a653cb4597bc03034`；
+它不是本 Release 的同一个文件。
 
 ## 这个版本解决了什么
 
@@ -82,10 +87,14 @@ ReleaseOnly 版本采取三层保护：
 
 已验证：
 
-- Windows 10 22H2 64 位；
+- Windows 10 专业版 22H2 64 位，系统内部版本 19045.5912；
 - 32 位 ActiveX 宿主；
 - `Flash32_34_0_0_376.ocx` Release；
-- 目标程序连续运行约 4 小时未再次出现原访问冲突。
+- SHA-256 为 `dae566c0f9618558d3bcc1bb600eaf1a93d9bd2a1c179cc0b74df6fb4ef309f4`
+  的 CI 安装包完成安装及目标程序运行测试，未发现问题。
+
+更早的参考安装包曾连续运行约 4 小时未再次出现原访问冲突，但该结果不能代替
+对本 Release 文件的哈希核对。
 
 这不是对所有 Flash 故障的保证。它不能自动修复目标程序自身缺陷、损坏 SWF、服务器下线、证书/网络错误、操作系统损坏，也不一定能清理放在自定义目录中的便携版插件。
 

@@ -63,8 +63,10 @@ dist\SHA256SUMS.txt
 - 手动运行；
 - 修改安装器、公共库、卸载器、构建脚本或工作流后推送到默认分支。
 
-普通提交只生成 Actions Artifact。提交信息含 `[release]` 时，工作流还会创建或更新固定标签
-`v34.0.0.376-release-only.1` 的 GitHub Release，并上传 EXE 与校验文件。
+该工作流始终只生成 Actions Artifact，不直接公开 Release。真实 Windows 测试通过后，
+使用 `.github/workflows/promote-tested-release.yml` 输入原构建 run ID、实测安装包
+SHA-256 和源码提交 SHA，把同一个 Artifact 提升为 GitHub Release。提升流程会在公开前
+两次核对 EXE 与 `SHA256SUMS.txt`。
 
 ## 关于可重复构建
 

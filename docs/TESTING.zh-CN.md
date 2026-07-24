@@ -17,7 +17,18 @@
 
 | Windows | 架构 | 组件 | 结果 |
 | --- | --- | --- | --- |
-| Windows 10 22H2 | 64 位系统、32 位宿主 | ActiveX Release | 目标程序约 4 小时未复现原访问冲突 |
+| Windows 10 专业版 22H2（19045.5912） | 64 位系统、32 位宿主 | ActiveX Release | CI 安装包安装及目标程序运行测试通过 |
+
+上述 CI 安装包 SHA-256：
+
+```text
+dae566c0f9618558d3bcc1bb600eaf1a93d9bd2a1c179cc0b74df6fb4ef309f4
+```
+
+在此之前，参考 ReleaseOnly 安装包曾连续运行约 4 小时未复现原访问冲突；
+其 SHA-256 为
+`4e28c1a2e982294ede1dc0f04c36611dd6eea5a2bfecfb7a653cb4597bc03034`。
+两者是不同构建，不应混用测试结论或哈希。
 
 ## 建议补充矩阵
 
