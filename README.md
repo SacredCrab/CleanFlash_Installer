@@ -11,7 +11,7 @@
 
 | 文件 | 大小 | GitHub 状态 | 已知情况 |
 | --- | ---: | --- | --- |
-| `CleanFlash_34.0.0.376_LegacyBundle_56.6MiB.exe` | 59,362,816 字节 | 待上传 | 原有大包，同时包含 Release 与 Debug 组件。在 Windows 10 22H2 x64 上实际运行约 4 小时，未观察到异常；系统当时注册的是 Release OCX。此前错误目前无法复现，因此不能据此证明它修复了错误。 |
+| `CleanFlash_34.0.0.376_LegacyBundle_56.6MiB.exe` | 59,362,816 字节 | 已发布 | 原有大包，同时包含 Release 与 Debug 组件。在 Windows 10 22H2 x64 上实际运行约 4 小时，未观察到异常；系统当时注册的是 Release OCX。此前错误目前无法复现，因此不能据此证明它修复了错误。 |
 | `CleanFlash_34.0.0.376_ReleaseOnly_Installer.exe` | 18,670,592 字节 | 已发布 | 按当前源码重新构建，只打包 Release 组件；其中的核心 Release Flash 文件与大包内对应文件逐字节一致。尚未完成最终用户环境的端到端运行测试。 |
 
 SHA-256：
