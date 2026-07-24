@@ -75,13 +75,38 @@ function Get-SevenZipPath {
     throw "7-Zip was not found. Install 7-Zip or add 7z.exe to PATH."
 }
 
+function Get-MSBuildPath {
+    $command = Get-Command "MSBuild.exe" -ErrorAction SilentlyContinue
+    if ($null -ne $command) {
+        return $command.Source
+    }
+
+    $programFilesX86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+    if (-not [string]::IsNullOrWhiteSpace($programFilesX86)) {
+        $vswhere = Join-Path $programFilesX86 "Microsoft Visual Studio\Installer\vswhere.exe"
+        if (Test-Path -LiteralPath $vswhere -PathType Leaf) {
+            $candidate = & $vswhere `
+                -latest `
+                -products * `
+                -requires Microsoft.Component.MSBuild `
+                -find "MSBuild\**\Bin\MSBuild.exe" |
+                Select-Object -First 1
+            if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+                return $candidate
+            }
+        }
+    }
+
+    throw "Full-framework MSBuild was not found. Install Visual Studio 2022 Build Tools with the MSBuild component."
+}
+
 if (Test-Path -LiteralPath $BuildRoot) {
     Remove-Item -LiteralPath $BuildRoot -Recurse -Force
 }
 New-Item -ItemType Directory -Path $DownloadDirectory, $ExtractDirectory, $PayloadDirectory, $OutputDirectory -Force | Out-Null
 
 $SevenZip = Get-SevenZipPath
-$DotNet = (Get-Command "dotnet.exe" -ErrorAction Stop).Source
+$MSBuild = Get-MSBuildPath
 
 $installFormSource = Get-Content -LiteralPath (Join-Path $RepoRoot "CleanFlashInstaller\InstallForm.cs") -Raw
 if ($installFormSource -match "Set(?:Flag|Conditionally)\s*\([^\)]*InstallFlags\.DEBUG") {
@@ -105,7 +130,13 @@ Write-Host "Extracting upstream package..."
 Invoke-Checked $SevenZip "x" $UpstreamArchive "-o$ExtractDirectory" "-y"
 
 Write-Host "Building the uninstaller..."
-Invoke-Checked $DotNet "build" (Join-Path $RepoRoot "CleanFlashUninstaller\CleanFlashUninstaller.csproj") "-c" $Configuration "--nologo" "--verbosity" "minimal"
+Invoke-Checked $MSBuild `
+    (Join-Path $RepoRoot "CleanFlashUninstaller\CleanFlashUninstaller.csproj") `
+    "/restore" `
+    "/t:Build" `
+    "/p:Configuration=$Configuration" `
+    "/nologo" `
+    "/verbosity:minimal"
 
 $uninstaller = Get-ChildItem -Path (Join-Path $RepoRoot "CleanFlashUninstaller\bin\$Configuration") -Filter "CleanFlashUninstaller.exe" -File -Recurse |
     Select-Object -First 1
@@ -166,7 +197,13 @@ try {
 Invoke-Checked $SevenZip "t" $EmbeddedArchive
 
 Write-Host "Building the installer..."
-Invoke-Checked $DotNet "build" (Join-Path $RepoRoot "CleanFlashInstaller\CleanFlashInstaller.csproj") "-c" $Configuration "--nologo" "--verbosity" "minimal"
+Invoke-Checked $MSBuild `
+    (Join-Path $RepoRoot "CleanFlashInstaller\CleanFlashInstaller.csproj") `
+    "/restore" `
+    "/t:Build" `
+    "/p:Configuration=$Configuration" `
+    "/nologo" `
+    "/verbosity:minimal"
 
 $builtInstaller = Get-ChildItem -Path (Join-Path $RepoRoot "CleanFlashInstaller\bin\$Configuration") -Filter "CleanFlashInstaller.exe" -File -Recurse |
     Select-Object -First 1

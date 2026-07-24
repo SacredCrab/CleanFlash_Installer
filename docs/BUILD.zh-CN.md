@@ -22,9 +22,15 @@
 
 - Windows 10/11 或 Windows Server 2022；
 - PowerShell 5.1 或更高；
+- Visual Studio 2022 Build Tools（包含 MSBuild 组件）；
 - .NET SDK 8.x；
 - 7-Zip；
 - 网络可访问 GitHub Release 与 NuGet。
+
+构建必须使用 Visual Studio 随附的完整 .NET Framework MSBuild，而不是
+`dotnet build`。卸载器与安装器是面向 .NET Framework 4.0 的 WinForms
+项目，其中包含旧式非字符串 `.resx` 资源；使用现代 `dotnet` SDK 的
+跨平台 MSBuild 可能触发 `MSB3822`/`MSB3823`。
 
 在仓库根目录运行：
 
