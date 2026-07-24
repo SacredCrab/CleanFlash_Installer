@@ -16,3 +16,9 @@ obj
 *.7z
 
 target
+
+# Local release build inputs and outputs
+.build/
+.build-validation-*/
+dist/
+upstream-assets/

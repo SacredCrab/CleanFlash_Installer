@@ -130,11 +130,11 @@
 
 [HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\Clean Flash Player]
 "DisplayName"="Clean Flash Player ${VERSION}"
-"HelpLink"="https://gitlab.com/cleanflash/installer#clean-flash-player"
+"HelpLink"="https://github.com/SacredCrab/CleanFlash_Installer"
 "NoModify"=dword:00000001
 "NoRepair"=dword:00000001
-"URLInfoAbout"="https://gitlab.com/cleanflash/installer#clean-flash-player"
-"URLUpdateInfo"="https://gitlab.com/cleanflash/installer#clean-flash-player"
+"URLInfoAbout"="https://github.com/SacredCrab/CleanFlash_Installer"
+"URLUpdateInfo"="https://github.com/SacredCrab/CleanFlash_Installer/releases"
 "VersionMajor"=dword:00000022
 "VersionMinor"=dword:00000000
 "Publisher"="CleanFlash Team"

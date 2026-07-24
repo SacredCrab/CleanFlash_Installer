@@ -1,0 +1,61 @@
+name: 兼容性或安装问题
+description: 报告 ReleaseOnly 安装、卸载或旧程序兼容问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请勿上传第三方程序、私有 SWF、账号信息或其他无权公开的文件。
+  - type: input
+    id: windows
+    attributes:
+      label: Windows 版本
+      description: 例如 Windows 10 22H2 64 位
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Flash 组件
+      options:
+        - ActiveX
+        - NPAPI
+        - PPAPI
+        - Standalone
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: 完整错误文本
+      description: 请粘贴文本，不要只描述“打不开”
+    validations:
+      required: true
+  - type: input
+    id: installer_hash
+    attributes:
+      label: 安装包 SHA-256
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Flash 诊断报告
+      description: 运行 scripts/Get-FlashDiagnostics.ps1 后粘贴结果，并先删除个人信息
+      render: text
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 公开信息确认
+      options:
+        - label: 我已经删除个人路径、账号、令牌及无权公开的文件
+          required: true

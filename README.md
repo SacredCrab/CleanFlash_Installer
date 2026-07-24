@@ -1,55 +1,121 @@
-# Clean Flash Player
+# Clean Flash Player 34.0.0.376 ReleaseOnly
 
-[![Patreon](https://img.shields.io/badge/Kofi-donate-purple.svg)](https://ko-fi.com/disyer) [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://gitlab.com/cleanflash/installer/-/blob/master/LICENSE)
+[![License: MIT](https://img.shields.io/badge/installer%20source-MIT-blue.svg)](LICENSE)
+[![Flash: 34.0.0.376](https://img.shields.io/badge/Flash-34.0.0.376-orange.svg)](https://github.com/darktohka/clean-flash-builds/releases/tag/v1.54)
 
-![Image of Clean Flash Player](https://i.imgur.com/565LJBI.png)
+这是 [Clean Flash Player 安装器](https://gitlab.com/cleanflash/installer) 的社区维护分支，面向仍然依赖 Flash ActiveX、NPAPI、PPAPI 或独立播放器的旧程序。
 
-[Download latest version](https://gitlab.com/cleanflash/installer/-/releases)
+本分支的重点不是提供 Debug Player，而是避免普通用户误装 Debug OCX 后，在旧式 ActiveX 宿主程序中反复遇到 `Read of address 0000000C` 访问冲突。
 
-## What's this?
+> 本项目不是 Adobe、重橙网络或原 Clean Flash 团队的官方发行版。Flash 已停止全球支持，具有已知安全风险；请仅运行可信内容，优先离线或隔离使用。
 
-Clean Flash Player is a distribution of Adobe Flash Player, with the mission of keeping the original Flash Player alive for compatibility and ease of use.
+## 下载
 
-The original Flash Player was discontinued on January 12th, 2021. Adobe is committed to keeping Flash Player alive in the Chinese region, however, by providing official monthly updates to Flash Player in China.
+从本仓库的 [Releases](https://github.com/SacredCrab/CleanFlash_Installer/releases) 下载：
 
-Clean Flash Player uses a modified version of this updated Flash Player version, keeping Flash Player clean from adware.
+- `CleanFlash_34.0.0.376_ReleaseOnly_Installer.exe`
+- `SHA256SUMS.txt`
 
-Google Chrome, Mozilla Firefox and Internet Explorer browser plugins are supported. Clean Flash Player ships with a standalone Flash Projector as well.
+请在运行前核对 SHA-256。曾完成实际稳定性验证的安装包参考 SHA-256 为：
 
-**Clean Flash is compatible and tested with Windows XP, Windows Vista, Windows 7, Windows 8.1, Windows 10 and Windows 11**. If attempting to run on Windows XP, download [.NET Framework 4.0](https://dotnet.microsoft.com/download/dotnet-framework/net40) first and optionally update to [.NET Framework 4.0.3](https://www.microsoft.com/en-us/download/details.aspx?id=29053).
+```text
+4e28c1a2e982294ede1dc0f04c36611dd6eea5a2bfecfb7a653cb4597bc03034
+```
 
-## Browser compatibility
+如果 Release 附件的哈希与此不同，它可能是由公开工作流重新构建的等价版本，但不能宣称与上述实测文件字节完全相同。每个 Release 都应以同页 `SHA256SUMS.txt` 为准。
 
-Newer versions of Google Chrome and Mozilla Firefox do not support Flash Player anymore.
+## 这个版本解决了什么
 
-To keep using Flash Player on **Google Chrome**, install an older version of Chrome. The last supported version is Chrome 87.0.4280.168.
+在已诊断案例中，旧程序启动后出现：
 
-To keep using Flash Player on **Mozilla Firefox**, install [**Waterfox Classic**](https://classic.waterfox.net), [**Pale Moon**](https://palemoon.org) or [**K-Meleon**](http://kmeleonbrowser.org/forum/read.php?19,154431). They are forks of Mozilla Firefox with built-in Flash Player support.
+```text
+Access violation ... in module 'Flash32_34_0_0_330.ocx'.
+Read of address 0000000C.
+```
 
-**Internet Explorer** still supports Flash Player on Windows 10.
+把 Flash 更新到 34.0.0.376 后仍然报错，是因为安装的是 **Debug OCX**，而不是单纯因为版本旧。两个 Debug 版本在同一类代码路径中都可能对空指针偏移 `0x0C` 进行读取。
 
-<details><summary>Alternatives</summary>
+ReleaseOnly 版本采取三层保护：
 
-- [Cent Browser 4.3.9.248](https://static.centbrowser.com/win_stable/4.3.9.248)
-- [Chromium 88.0.4285.0](https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html): specify your platform and select/enter 814251
-- [Basilisk](https://www.basilisk-browser.org)
-- [Otter Browser](https://otter-browser.org)
-- [roytam's XP-compatible browser builds](http://rtfreesoft.blogspot.com)
-- [Portable old browser versions (guide)](https://www.raymond.cc/blog/how-to-enable-flash-support-in-firefox-portable)
+1. 安装向导不再显示 Debug 版本选择页；
+2. 安装逻辑永远不设置 `InstallFlags.DEBUG`；
+3. 提取逻辑拒绝任何名称含 `-debug` 的组件。
 
-</details> 
+同时保留原安装器的重要功能：
 
-## Usage
+- 安装前关闭正在加载 Flash 的相关进程；
+- 删除旧 Flash 更新任务和服务；
+- 删除 Flash Center、相关服务、缓存、快捷方式和标准安装目录残留；
+- 清理旧 Flash 注册表项；
+- 安装所选 Release 组件并重新注册 ActiveX；
+- 安装独立卸载程序；
+- 不安装 Flash Center，不主动加入广告组件。
 
-- Make sure you have a compatible browser to use Flash Player with
-- Download the latest version from [GitLab](https://gitlab.com/cleanflash/installer/-/releases)
-- Launch installer
-- Accept the disclaimer
-- Choose which browser plugins to install
-- Choose to install the standalone projector or not
-- Choose to install the debug build or not
-- Close all browser windows, or let the installer close them for you
-- Press the "Install" button and wait for Flash Player to install
-- Enjoy using Flash Player!
+详细根因、文件识别方法和排查边界见 [故障排查文档](docs/TROUBLESHOOTING.zh-CN.md)。
 
-**P.S.** The Clean Flash Player installer will automatically close all browser windows when updating Flash Player. It will also uninstall all previous versions of Flash Player, as well as the adware Flash Center application. The installer will also create an uninstaller that you can use to uninstall Clean Flash at any time.
+## 可安装组件
+
+| 组件 | 用途 | 备注 |
+| --- | --- | --- |
+| ActiveX | Internet Explorer 内核及旧式桌面宿主 | 本次故障对应的组件 |
+| NPAPI | Pale Moon、Waterfox Classic 等兼容浏览器 | 现代 Firefox 已不支持 |
+| PPAPI | 旧版 Chromium 系浏览器 | 现代 Chrome/Edge 已不支持 |
+| Standalone Projector | 直接运行本地 SWF | 建议只打开可信文件 |
+
+64 位 Windows 会同时安装所选组件的 32 位和 64 位文件；Windows 7 及更早系统会自动选择 legacy ActiveX 文件。
+
+## 安装方法
+
+1. 备份需要运行的程序和 SWF 数据。
+2. 退出使用 Flash 的程序和浏览器。
+3. 以管理员身份运行安装器。
+4. 勾选所需组件。运行传统桌面程序通常至少需要 ActiveX。
+5. 安装器会先完整清理标准位置中的旧 Flash/Flash Center，再安装 34.0.0.376 Release。
+6. 安装完成后重新启动目标程序。
+7. 如需确认实际注册的 OCX，可运行：
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\Get-FlashDiagnostics.ps1
+   ```
+
+## 已验证与未验证范围
+
+已验证：
+
+- Windows 10 22H2 64 位；
+- 32 位 ActiveX 宿主；
+- `Flash32_34_0_0_376.ocx` Release；
+- 目标程序连续运行约 4 小时未再次出现原访问冲突。
+
+这不是对所有 Flash 故障的保证。它不能自动修复目标程序自身缺陷、损坏 SWF、服务器下线、证书/网络错误、操作系统损坏，也不一定能清理放在自定义目录中的便携版插件。
+
+## 构建
+
+源码不提交 Adobe/Flash 二进制。构建脚本会从
+[darktohka/clean-flash-builds v1.54](https://github.com/darktohka/clean-flash-builds/releases/tag/v1.54)
+下载经过校验的 Windows 34.0.0.376 组件，然后生成安装包。
+
+构建说明见 [BUILD.zh-CN.md](docs/BUILD.zh-CN.md)。GitHub Actions 工作流在 Windows runner 上执行同一脚本。
+
+仓库 Fork、Actions 权限、首次 Release 和后续维护步骤见
+[PUBLISHING.zh-CN.md](docs/PUBLISHING.zh-CN.md)。
+
+`rust/` 目录来自上游后续实验性移植，本次 34.0.0.376 ReleaseOnly 发布不使用该目录；
+当前发布与验证均以原有 C#/.NET Framework 安装器为准。
+
+## 上游与致谢
+
+本项目是在以下工作基础上的维护分支：
+
+- 原始项目与主要作者：[Clean Flash / installer](https://gitlab.com/cleanflash/installer)，作者 darktohka / FlashPatch Team；
+- GitHub 备份镜像：[TCOTC/CleanFlash_Installer](https://github.com/TCOTC/CleanFlash_Installer)；
+- 34.0.0.376 清理版二进制：[darktohka/clean-flash-builds](https://github.com/darktohka/clean-flash-builds)；
+- 二进制补丁工具：[darktohka/FlashPatch](https://github.com/darktohka/FlashPatch)。
+
+完整归属与二进制许可边界见 [NOTICE.md](NOTICE.md)。
+
+## 许可证
+
+安装器源码沿用原项目的 [MIT License](LICENSE)。原版权声明必须保留。
+
+Flash Player 二进制、Adobe 名称和商标不因存放于安装包中而变为 MIT 许可内容；它们仍受各自权利人的条款约束。维护者不授予这些第三方内容的额外权利。

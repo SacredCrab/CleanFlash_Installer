@@ -16,8 +16,6 @@ check out Clean Flash Player's website!";
 All versions of Flash Player have been successfully uninstalled.
 
 If you ever change your mind, check out Clean Flash Player's website!";
-        private bool debugChosen = false;
-
         public InstallForm() {
             InitializeComponent();
         }
@@ -54,14 +52,6 @@ If you ever change your mind, check out Clean Flash Player's website!";
         private void OpenPlayerChoicePanel() {
             HideAllPanels();
             playerChoicePanel.Visible = true;
-            prevButton.Text = "BACK";
-            nextButton.Text = "NEXT";
-        }
-
-        private void OpenDebugChoicePanel() {
-            HideAllPanels();
-            debugChoicePanel.Visible = true;
-            debugChosen = false;
             prevButton.Text = "BACK";
             nextButton.Text = "NEXT";
         }
@@ -151,7 +141,10 @@ If you ever change your mind, check out Clean Flash Player's website!";
             flags.SetConditionally(playerBox.Checked, InstallFlags.PLAYER);
             flags.SetConditionally(playerDesktopBox.Checked, InstallFlags.PLAYER_DESKTOP);
             flags.SetConditionally(playerStartMenuBox.Checked, InstallFlags.PLAYER_START_MENU);
-            flags.SetConditionally(debugChosen, InstallFlags.DEBUG);
+            // ReleaseOnly invariant: never set InstallFlags.DEBUG. The debug
+            // player has caused null-pointer access violations in legacy
+            // ActiveX host applications, even when using a current Flash
+            // version.
 
             progressBar.Value = 0;
             progressBar.Maximum = flags.GetTicks();
@@ -195,11 +188,9 @@ If you ever change your mind, check out Clean Flash Player's website!";
             } else if (choicePanel.Visible) {
                 OpenDisclaimerPanel();
             } else if (beforeInstallPanel.Visible) {
-                OpenDebugChoicePanel();
+                OpenPlayerChoicePanel();
             } else if (playerChoicePanel.Visible) {
                 OpenChoicePanel();
-            } else if (debugChoicePanel.Visible) {
-                OpenPlayerChoicePanel();
             }
         }
 
@@ -209,8 +200,6 @@ If you ever change your mind, check out Clean Flash Player's website!";
             } else if (choicePanel.Visible) {
                 OpenPlayerChoicePanel();
             } else if (playerChoicePanel.Visible) {
-                OpenDebugChoicePanel();
-            } else if (debugChoicePanel.Visible) {
                 OpenBeforeInstall();
             } else if (beforeInstallPanel.Visible || failurePanel.Visible) {
                 OpenInstall();
@@ -281,7 +270,7 @@ If you ever change your mind, check out Clean Flash Player's website!";
         }
 
         private void completeLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
-            Process.Start("https://gitlab.com/cleanflash/installer#clean-flash-player");
+            Process.Start("https://github.com/SacredCrab/CleanFlash_Installer");
         }
 
         private void copyErrorButton_Click(object sender, EventArgs e) {
@@ -290,7 +279,9 @@ If you ever change your mind, check out Clean Flash Player's website!";
         }
 
         private void debugButton_Click(object sender, EventArgs e) {
-            debugChosen = MessageBox.Show("Are you sure you want to install the debug version?\n\nThis version is only meant to be used by experienced developers!\nIf you are not sure, choose No.", "Clean Flash Installer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+            // Kept only because the original WinForms designer still wires the
+            // unused panel to this handler. ReleaseOnly always continues with
+            // the release build.
             OpenBeforeInstall();
         }
     }

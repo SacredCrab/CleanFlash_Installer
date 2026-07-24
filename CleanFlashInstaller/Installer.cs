@@ -48,15 +48,18 @@ namespace CleanFlashInstaller {
                 }
 
                 string filename = reader.Entry.Key.Split('/')[0];
+                // Defense in depth: debug payloads must never be selected by
+                // a ReleaseOnly build, even if a malformed caller sets the
+                // legacy DEBUG flag.
+                if (filename.IndexOf("-debug", StringComparison.OrdinalIgnoreCase) >= 0) {
+                    continue;
+                }
+
                 string installKey = filename.Split('-')[0];
                 InstallEntry installEntry = entries[installKey];
 
                 if (installEntry.RequiredFlags.GetValue() != InstallFlags.NONE) {
                     if (!flags.IsSet(installEntry.RequiredFlags)) {
-                        continue;
-                    }
-
-                    if (flags.IsSet(InstallFlags.DEBUG) != filename.Contains("-debug")) {
                         continue;
                     }
                 }
@@ -132,15 +135,9 @@ namespace CleanFlashInstaller {
             ExtractArchive(archive, entries, form, flags);
 
             if (flags.IsSet(InstallFlags.PLAYER)) {
-                bool debug = flags.IsSet(InstallFlags.DEBUG);
                 string name = "Flash Player";
                 string description = "Standalone Flash Player " + UpdateChecker.GetFlashVersion();
-                string executable = Path.Combine(flashProgram32Path, debug ? "flashplayer_sa_debug.exe" : "flashplayer_sa.exe");
-
-                if (debug) {
-                    name += " (Debug)";
-                    description += " (Debug)";
-                }
+                string executable = Path.Combine(flashProgram32Path, "flashplayer_sa.exe");
 
                 if (flags.IsSet(InstallFlags.PLAYER_START_MENU)) {
                     CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), executable, name, description);

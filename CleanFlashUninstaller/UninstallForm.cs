@@ -114,7 +114,7 @@ namespace CleanFlashUninstaller {
         }
 
         private void completeLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
-            Process.Start("https://gitlab.com/cleanflash/installer#clean-flash-player");
+            Process.Start("https://github.com/SacredCrab/CleanFlash_Installer");
         }
 
         private void copyErrorButton_Click(object sender, EventArgs e) {
